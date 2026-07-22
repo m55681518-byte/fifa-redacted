@@ -99,7 +99,7 @@ export function DossierGrid() {
 
   return (
     <ToastProvider>
-      <div className="pb-24">
+      <div className="min-h-screen pb-24">
         <Header archiveCount={dossiers.length} />
 
         <HeroTimeline
@@ -108,19 +108,19 @@ export function DossierGrid() {
           onPlayAudio={handlePlayAudio}
         />
 
-        <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-dossier-100">
+        <main className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-3">
+            <h2 className="font-display text-base font-bold tracking-wider text-zinc-100">
               {selectedYear
-                ? `Dossiers — World Cup ${selectedYear}`
-                : "All Classified Dossiers"}
+                ? `CLASSIFIED // WC ${selectedYear}`
+                : "ALL CLASSIFIED DOSSIERS"}
             </h2>
-            <span className="font-mono-custom text-xs text-dossier-500">
-              {filtered.length} record{filtered.length !== 1 ? "s" : ""}
+            <span className="font-mono-custom text-[9px] text-zinc-500">
+              {filtered.length} RECORD{filtered.length !== 1 ? "S" : ""}
             </span>
           </div>
 
-          <motion.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div layout className="grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {filtered.map((dossier) => (
                 <SecretCard
@@ -135,10 +135,10 @@ export function DossierGrid() {
 
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20">
-              <p className="font-mono-custom text-sm text-dossier-600">
+              <p className="font-mono-custom text-xs text-zinc-600">
                 NO CLASSIFIED RECORDS FOUND
               </p>
-              <p className="mt-1 text-xs text-dossier-700">
+              <p className="mt-1 font-mono-custom text-[10px] text-zinc-700">
                 Try selecting a different tournament year
               </p>
             </div>

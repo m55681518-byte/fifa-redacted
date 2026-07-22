@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronUp,
   Calendar,
-  Video,
   Image,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  Eye,
+  ThumbsUp,
 } from "lucide-react";
 import type { SecretDossier, Comment } from "../../data/secrets";
 import { CommentSection } from "./comment-section";
@@ -52,10 +53,10 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
 
   const classificationColor =
     dossier.classification === "TOP SECRET"
-      ? "text-accent-red border-accent-red"
+      ? "text-[#ff2e2e] border-[#ff2e2e]"
       : dossier.classification === "CONFIDENTIAL"
-        ? "text-accent-yellow border-accent-yellow"
-        : "text-dossier-400 border-dossier-500";
+        ? "text-tactical-amber border-tactical-amber"
+        : "text-zinc-400 border-zinc-500";
 
   const hasGallery = dossier.gallery && dossier.gallery.length > 0;
   const currentMedia =
@@ -65,45 +66,66 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
         ? dossier.gallery[galleryIdx]
         : dossier.thumbnailUrl;
 
+  const now = new Date();
+  const timecode = now.toTimeString().slice(0, 8);
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="group relative overflow-hidden rounded-xl border border-dossier-700/80 bg-dossier-800/30 transition-all hover:border-dossier-600 hover:shadow-[0_0_40px_rgba(239,68,68,0.08)]"
+      className="group relative overflow-hidden rounded-none border border-zinc-800 bg-zinc-950/90 transition-all hover:border-zinc-700"
     >
+      <span className="crosshair-tl crosshair-tl">+</span>
+      <span className="crosshair-tr">+</span>
+      <span className="crosshair-bl">+</span>
+      <span className="crosshair-br">+</span>
+
       <div className="absolute right-3 top-3 z-20">
         <span
-          className={`classification-stamp inline-block rounded border px-2 py-0.5 text-[9px] leading-none tracking-[0.2em] ${classificationColor}`}
+          className={`classification-stamp inline-block rounded-none border px-2 py-0.5 text-[9px] leading-none ${classificationColor}`}
         >
-          {dossier.classification}
+          {dossier.classification === "TOP SECRET"
+            ? "[ TOP SECRET ]"
+            : dossier.classification === "CONFIDENTIAL"
+              ? "[ CONFIDENTIAL ]"
+              : "[ CLASSIFIED ]"}
         </span>
       </div>
 
-      <div className="relative h-52 overflow-hidden bg-dossier-900">
+      <div className="relative h-52 overflow-hidden bg-zinc-900 vignette-overlay">
         {dossier.mediaType === "youtube" && !videoError ? (
-          <iframe
-            src={`${dossier.mediaUrl}?autoplay=0&rel=0&showinfo=0&modestbranding=1`}
-            className="h-full w-full"
-            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-            onError={() => setVideoError(true)}
-          />
-        ) : videoError || dossier.mediaType === "gallery" ? (
+          <div className="relative h-full w-full">
+            <iframe
+              src={`${dossier.mediaUrl}?autoplay=0&rel=0&showinfo=0&modestbranding=1`}
+              className="h-full w-full"
+              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              onError={() => setVideoError(true)}
+            />
+            <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-sm bg-zinc-950/80 px-1.5 py-0.5">
+              <span className="rec-indicator">
+                <span className="rec-dot" />
+                <span className="timecode-overlay">REC</span>
+              </span>
+              <span className="timecode-overlay">{timecode} UTC</span>
+            </div>
+          </div>
+        ) : (
           <div className="relative h-full w-full">
             <img
               src={currentMedia}
               alt={dossier.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="archival-photo h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
             {videoError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-dossier-900/80">
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80">
                 <div className="flex flex-col items-center gap-1">
-                  <AlertTriangle className="h-5 w-5 text-accent-amber" />
-                  <span className="text-[10px] text-dossier-500">Video unavailable</span>
+                  <AlertTriangle className="h-5 w-5 text-tactical-amber" />
+                  <span className="font-mono-custom text-[10px] text-zinc-500">SIGNAL LOST</span>
                 </div>
               </div>
             )}
@@ -114,7 +136,7 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
                     e.stopPropagation();
                     setGalleryIdx((p) => (p - 1 + dossier.gallery.length) % dossier.gallery.length);
                   }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-dossier-900/70 p-1 text-dossier-300 opacity-0 transition-opacity hover:bg-dossier-800 group-hover:opacity-100"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-none bg-zinc-950/70 p-1 text-zinc-300 opacity-0 transition-opacity hover:bg-zinc-900 group-hover:opacity-100"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
@@ -123,7 +145,7 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
                     e.stopPropagation();
                     setGalleryIdx((p) => (p + 1) % dossier.gallery.length);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-dossier-900/70 p-1 text-dossier-300 opacity-0 transition-opacity hover:bg-dossier-800 group-hover:opacity-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-none bg-zinc-950/70 p-1 text-zinc-300 opacity-0 transition-opacity hover:bg-zinc-900 group-hover:opacity-100"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
@@ -131,8 +153,8 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
                   {dossier.gallery.map((_, i) => (
                     <span
                       key={i}
-                      className={`h-1 rounded-full transition-all ${
-                        i === galleryIdx ? "w-3 bg-accent-red" : "w-1 bg-dossier-600"
+                      className={`h-[2px] rounded-none transition-all ${
+                        i === galleryIdx ? "w-3 bg-[#ff2e2e]" : "w-1 bg-zinc-600"
                       }`}
                     />
                   ))}
@@ -140,50 +162,44 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
               </>
             )}
           </div>
-        ) : (
-          <img
-            src={currentMedia}
-            alt={dossier.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
         )}
 
-        <div className="absolute left-3 bottom-3 flex items-center gap-2">
-          <span className="rounded-md border border-dossier-700 bg-dossier-900/80 px-2 py-0.5 font-mono-custom text-[10px] text-accent-red">
+        <div className="absolute left-2 bottom-2 flex items-center gap-1.5">
+          <span className="font-mono-custom rounded-none border border-zinc-700 bg-zinc-950/80 px-1.5 py-0.5 text-[9px] text-[#ff2e2e]">
             {dossier.id}
           </span>
-          <span className="rounded-md border border-dossier-700 bg-dossier-900/80 px-2 py-0.5 text-[10px] text-dossier-400">
-            <Calendar className="mr-1 inline h-3 w-3" />
+          <span className="font-mono-custom rounded-none border border-zinc-700 bg-zinc-950/80 px-1.5 py-0.5 text-[9px] text-zinc-400">
             {dossier.year}
           </span>
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="text-sm font-bold leading-tight text-dossier-100">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-display text-sm font-bold leading-tight text-zinc-100">
           {dossier.title}
         </h3>
-        <p className="mt-2 text-xs leading-relaxed text-dossier-400 line-clamp-4">
+        <p className="mt-2 text-xs leading-relaxed text-zinc-400 line-clamp-4">
           {dossier.description}
         </p>
 
-        <div className="mt-3 flex items-center gap-2 text-[10px] text-dossier-600">
+        <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500">
           <span className="text-sm">{getFlag(dossier.hostFlag)}</span>
-          <span>{dossier.hostNation}</span>
+          <span className="tracking-wider">{dossier.hostNation.toUpperCase()}</span>
+          <span className="text-zinc-700">|</span>
+          <span className="font-mono-custom">{dossier.year}</span>
         </div>
 
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={handleUpvote}
             disabled={localUpvoted}
-            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-all ${
+            className={`flex items-center gap-1.5 rounded-none border px-2.5 py-1 text-xs transition-all ${
               localUpvoted
-                ? "border-accent-red/40 bg-accent-red/10 text-accent-red"
-                : "border-dossier-700 text-dossier-500 hover:border-dossier-600 hover:text-dossier-300"
+                ? "border-[#ff2e2e]/40 bg-[#ff2e2e]/10 text-[#ff2e2e]"
+                : "border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
             }`}
           >
-            <ChevronUp className="h-3.5 w-3.5" />
+            <ThumbsUp className="h-3 w-3" />
             <span className="font-mono-custom text-[11px]">{localCount}</span>
           </button>
 
@@ -192,17 +208,17 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
               href={dossier.mediaUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 rounded-md border border-dossier-700 px-2.5 py-1 text-xs text-dossier-500 transition-colors hover:border-dossier-600 hover:text-dossier-300"
+              className="flex items-center gap-1 rounded-none border border-zinc-700 px-2.5 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
             >
-              <ExternalLink className="h-3 w-3" />
-              View Source
+              <Eye className="h-3 w-3" />
+              SOURCE
             </a>
           )}
 
           {dossier.mediaType === "gallery" && (
-            <span className="flex items-center gap-1 text-[10px] text-dossier-600">
+            <span className="flex items-center gap-1 text-[10px] text-zinc-600">
               <Image className="h-3 w-3" />
-              {dossier.gallery.length} photos
+              {dossier.gallery.length} FRAMES
             </span>
           )}
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Plus, FileText, Activity } from "lucide-react";
+import { Shield, Plus, FileText } from "lucide-react";
 import { SubmissionModal } from "./submission-modal";
 
 export function Header({ archiveCount }: { archiveCount: number }) {
@@ -9,28 +9,28 @@ export function Header({ archiveCount }: { archiveCount: number }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-dossier-700/80 bg-dossier-900/95 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent-red/40 bg-accent-red/10 neon-glow-red">
-              <Shield className="h-5 w-5 text-accent-red" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-none border border-[#ff2e2e]/40 bg-[#ff2e2e]/10">
+              <Shield className="h-5 w-5 text-[#ff2e2e]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-dossier-100">
-                REDACTED<span className="ml-1 text-accent-red">DOSSIERS</span>
+              <h1 className="font-display text-base font-bold tracking-[0.15em] text-zinc-100">
+                REDACTED<span className="text-[#ff2e2e]">DOSSIERS</span>
               </h1>
-              <p className="text-[10px] tracking-[0.2em] text-dossier-500">
-                // FIFA SECRET ARCHIVES //
+              <p className="font-mono-custom text-[8px] tracking-[0.25em] text-zinc-500">
+                [ FIFA SECRET ARCHIVES ]
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-2 rounded-md border border-dossier-700 bg-dossier-800/50 px-3 py-1.5 text-xs sm:flex">
-              <FileText className="h-3.5 w-3.5 text-dossier-400" />
-              <span className="text-dossier-400">
-                Archive:{" "}
-                <span className="font-mono-custom font-bold text-accent-red">
+            <div className="hidden items-center gap-2 rounded-none border border-zinc-800 bg-zinc-900/80 px-3 py-1.5 font-mono-custom text-[10px] sm:flex">
+              <FileText className="h-3 w-3 text-zinc-500" />
+              <span className="text-zinc-400">
+                ARCHIVE:{" "}
+                <span className="font-bold text-[#ff2e2e]">
                   {archiveCount}
                 </span>
               </span>
@@ -38,10 +38,10 @@ export function Header({ archiveCount }: { archiveCount: number }) {
 
             <button
               onClick={() => setModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-accent-red/30 bg-accent-red/10 px-4 py-2 text-sm font-semibold text-accent-red transition-all hover:bg-accent-red/20 hover:border-accent-red/60 active:scale-95"
+              className="flex items-center gap-2 rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 px-4 py-2 font-display text-xs font-bold text-[#ff2e2e] tracking-wider transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Submit Secret</span>
+              <span className="hidden sm:inline">SUBMIT SECRET</span>
             </button>
           </div>
         </div>

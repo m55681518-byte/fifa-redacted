@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { worldCupYears, secretDossiers } from "../../data/secrets";
-import { Radar, Crosshair, Play } from "lucide-react";
 
 interface HeroTimelineProps {
   selectedYear: number | null;
@@ -11,16 +10,44 @@ interface HeroTimelineProps {
   onPlayAudio: (year: number) => void;
 }
 
-const RADIUS = 160;
-const CENTER = 180;
+const clusterColors: Record<string, string> = {
+  "1930-1962": "from-cyan-500/20 to-transparent",
+  "1966-1994": "from-amber-500/20 to-transparent",
+  "1998-2026": "from-[#ff2e2e]/20 to-transparent",
+};
+
+const clusterLabels: Record<string, string> = {
+  "1930-1962": "BAND 1 // EARLY",
+  "1966-1994": "BAND 2 // GOLDEN",
+  "1998-2026": "BAND 3 // MODERN",
+};
+
+function getClusterKey(year: number): string {
+  if (year <= 1962) return "1930-1962";
+  if (year <= 1994) return "1966-1994";
+  return "1998-2026";
+}
+
+function getHostCode(year: number): string {
+  const d = secretDossiers.find((s) => s.year === year);
+  if (!d) return "";
+  const map: Record<string, string> = {
+    England: "ENG",
+    Argentina: "ARG",
+    France: "FRA",
+    "South Korea": "KOR",
+    Germany: "GER",
+    "South Africa": "RSA",
+    Brazil: "BRA",
+    Qatar: "QAT",
+    "United States": "USA",
+    Uruguay: "URU",
+  };
+  return map[d.hostNation] || d.hostNation.slice(0, 3).toUpperCase();
+}
 
 export function HeroTimeline({ selectedYear, onSelectYear, onPlayAudio }: HeroTimelineProps) {
-  const [rotation, setRotation] = useState(0);
-  const [hoveredYear, setHoveredYear] = useState<number | null>(null);
-  const [activeCluster, setActiveCluster] = useState<string | null>(null);
-  const isDragging = useRef(false);
-  const lastX = useRef(0);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const dossiersByYear = useMemo(() => {
     const map: Record<number, boolean> = {};
@@ -28,250 +55,167 @@ export function HeroTimeline({ selectedYear, onSelectYear, onPlayAudio }: HeroTi
     return map;
   }, []);
 
-  const yearPositions = useMemo(() => {
-    return worldCupYears.map((year, i) => {
-      const angle = (i / worldCupYears.length) * Math.PI * 2 - Math.PI / 2;
-      const x = CENTER + RADIUS * Math.cos(angle);
-      const y = CENTER + RADIUS * Math.sin(angle);
-      const labelAngle = angle + Math.PI;
-      return { year, angle, x, y, labelAngle };
-    });
-  }, []);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    setRotation((r) => r + e.deltaY * 0.3);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
-    lastX.current = e.clientX;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    const dx = e.clientX - lastX.current;
-    lastX.current = e.clientX;
-    setRotation((r) => r + dx * 0.5);
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-  };
-
   useEffect(() => {
-    const handleUp = () => { isDragging.current = false; };
-    window.addEventListener("mouseup", handleUp);
-    return () => window.removeEventListener("mouseup", handleUp);
-  }, []);
-
-  const getClusterLabel = (year: number) =>
-    year <= 1962 ? "Early Era" : year <= 1994 ? "Golden Era" : "Modern Era";
-
-  const clusters = [
-    { label: "Early Era", years: worldCupYears.filter((y) => y <= 1962), color: "accent-cyan" },
-    { label: "Golden Era", years: worldCupYears.filter((y) => y > 1962 && y <= 1994), color: "accent-amber" },
-    { label: "Modern Era", years: worldCupYears.filter((y) => y > 1994), color: "accent-red" },
-  ];
+    if (selectedYear && scrollRef.current) {
+      const el = scrollRef.current.querySelector(`[data-year="${selectedYear}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+  }, [selectedYear]);
 
   return (
-    <section className="relative overflow-hidden border-b border-dossier-700/50 neon-grid">
-      <div className="absolute inset-0 bg-gradient-to-b from-accent-red/5 via-transparent to-transparent" />
+    <section className="relative overflow-hidden border-b border-zinc-800">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#ff2e2e]/5 via-transparent to-transparent" />
 
-      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-4 text-center">
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-mono-custom text-[10px] tracking-[0.3em] text-dossier-500"
+            className="font-mono-custom text-[9px] tracking-[0.3em] text-zinc-500"
           >
-            // CLASSIFIED TIMELINE //
+            [ FREQUENCY BAND SELECTOR ]
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mt-1 text-xl font-bold tracking-tight text-dossier-100 sm:text-2xl"
+            className="font-display mt-1 text-lg font-bold text-zinc-100 sm:text-xl"
           >
-            Tactical Dial
+            WORLD CUP ARCHIVE
           </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-1 text-xs text-dossier-400"
-          >
-            Drag to rotate · Scroll to zoom · Click a year
-          </motion.p>
-        </div>
-
-        <div className="flex justify-center gap-2 mb-4">
-          {clusters.map((c) => (
-            <button
-              key={c.label}
-              onClick={() => setActiveCluster(activeCluster === c.label ? null : c.label)}
-              className={`rounded-md border px-2.5 py-1 text-[10px] transition-all ${
-                activeCluster === c.label
-                  ? `border-${c.color}/40 bg-${c.color}/10 text-${c.color}`
-                  : "border-dossier-700 text-dossier-500 hover:border-dossier-600 hover:text-dossier-400"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
         </div>
 
         <div
-          className="relative mx-auto flex items-center justify-center select-none"
-          style={{ width: CENTER * 2, height: CENTER * 2 }}
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+          ref={scrollRef}
+          className="relative flex gap-0 overflow-x-auto pb-5"
+          style={{ scrollbarWidth: "none" }}
         >
-          <svg
-            ref={svgRef}
-            width={CENTER * 2}
-            height={CENTER * 2}
-            className="absolute inset-0"
-          >
-            <defs>
-              <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="rgba(239,68,68,0.08)" />
-                <stop offset="60%" stopColor="rgba(239,68,68,0.02)" />
-                <stop offset="100%" stopColor="rgba(239,68,68,0)" />
-              </radialGradient>
-            </defs>
+          <div className="flex items-end gap-0 mx-auto">
+            {worldCupYears.map((year, idx) => {
+              const hasDossier = !!dossiersByYear[year];
+              const isSelected = selectedYear === year;
+              const cluster = getClusterKey(year);
+              const firstInCluster =
+                idx === 0 || getClusterKey(worldCupYears[idx - 1]) !== cluster;
+              const hostCode = getHostCode(year);
 
-            <circle cx={CENTER} cy={CENTER} r={RADIUS + 20} fill="url(#radar-glow)" />
-            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="rgba(39,39,42,0.5)" strokeWidth={1} />
-            <circle cx={CENTER} cy={CENTER} r={RADIUS * 0.7} fill="none" stroke="rgba(39,39,42,0.3)" strokeWidth={0.5} strokeDasharray="4 4" />
-            <circle cx={CENTER} cy={CENTER} r={RADIUS * 0.4} fill="none" stroke="rgba(39,39,42,0.2)" strokeWidth={0.5} strokeDasharray="2 4" />
-            <circle cx={CENTER} cy={CENTER} r={RADIUS * 0.1} fill="rgba(239,68,68,0.05)" />
-
-            {[0, 1, 2, 3].map((i) => {
-              const a = (i / 4) * Math.PI * 2;
-              const x1 = CENTER + Math.cos(a) * 8;
-              const y1 = CENTER + Math.sin(a) * 8;
-              const x2 = CENTER + Math.cos(a) * RADIUS;
-              const y2 = CENTER + Math.sin(a) * RADIUS;
               return (
-                <line
-                  key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="rgba(39,39,42,0.2)"
-                  strokeWidth={0.5}
-                />
+                <div key={year} className="flex flex-col items-center" style={{ width: 36 }}>
+                  {firstInCluster && (
+                    <span className="font-mono-custom mb-2 text-[7px] tracking-[0.2em] text-zinc-600">
+                      {clusterLabels[cluster]}
+                    </span>
+                  )}
+
+                  <div className="relative flex flex-col items-center">
+                    <motion.button
+                      data-year={year}
+                      onClick={() => onSelectYear(isSelected ? null : year)}
+                      className={`relative flex flex-col items-center transition-all ${
+                        hasDossier ? "cursor-pointer" : "cursor-default"
+                      }`}
+                      whileHover={hasDossier ? { scale: 1.1 } : {}}
+                      whileTap={hasDossier ? { scale: 0.95 } : {}}
+                    >
+                      <span
+                        className={`font-mono-custom text-[10px] transition-colors ${
+                          isSelected
+                            ? "text-tactical-amber"
+                            : hasDossier
+                              ? "text-zinc-300 hover:text-[#ff2e2e]"
+                              : "text-zinc-700"
+                        }`}
+                      >
+                        {year}
+                      </span>
+
+                      {hasDossier && (
+                        <span className="font-mono-custom mt-0.5 text-[6px] text-zinc-600">
+                          {hostCode}
+                        </span>
+                      )}
+
+                      <div className="relative mt-1 flex flex-col items-center">
+                        <div
+                          className={`w-[2px] transition-all ${
+                            isSelected
+                              ? "h-8 bg-tactical-amber tactical-needle"
+                              : hasDossier
+                                ? "h-5 bg-[#ff2e2e]/40"
+                                : "h-3 bg-zinc-800"
+                          }`}
+                        />
+                        <div
+                          className={`mt-0.5 h-1 w-1 rounded-full transition-all ${
+                            isSelected
+                              ? "bg-tactical-amber shadow-[0_0_6px_rgba(245,158,11,0.6)]"
+                              : hasDossier
+                                ? "bg-[#ff2e2e]/60"
+                                : "bg-zinc-800"
+                          }`}
+                        />
+                      </div>
+                    </motion.button>
+                  </div>
+                </div>
               );
             })}
-
-            <g
-              style={{ transform: `rotate(${rotation}deg)`, transformOrigin: `${CENTER}px ${CENTER}px` }}
-            >
-              {yearPositions.map(({ year, x, y }, i) => {
-                const hasDossier = !!dossiersByYear[year];
-                const isSelected = selectedYear === year;
-                const isHovered = hoveredYear === year;
-                const isInCluster = activeCluster
-                  ? getClusterLabel(year) === activeCluster
-                  : true;
-
-                if (!isInCluster) return null;
-
-                return (
-                  <g
-                    key={year}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => onSelectYear(isSelected ? null : year)}
-                    onMouseEnter={() => setHoveredYear(year)}
-                    onMouseLeave={() => setHoveredYear(null)}
-                  >
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={isSelected ? 7 : isHovered ? 6 : 4}
-                      fill={
-                        isSelected
-                          ? "#ef4444"
-                          : hasDossier
-                            ? "rgba(239,68,68,0.4)"
-                            : "rgba(63,63,70,0.5)"
-                      }
-                      stroke={
-                        isSelected
-                          ? "rgba(239,68,68,0.6)"
-                          : isHovered
-                            ? "rgba(239,68,68,0.3)"
-                            : "transparent"
-                      }
-                      strokeWidth={2}
-                      style={{ transition: "r 0.2s, fill 0.2s" }}
-                    />
-                    {hasDossier && (
-                      <circle cx={x} cy={y} r={10} fill="none" stroke="rgba(239,68,68,0.1)" strokeWidth={1} />
-                    )}
-                    <text
-                      x={x}
-                      y={y - 12}
-                      textAnchor="middle"
-                      fill={isSelected || isHovered ? "#ef4444" : "#52525b"}
-                      fontSize={isSelected || isHovered ? 9 : 8}
-                      fontFamily="JetBrains Mono, monospace"
-                      style={{ transition: "fill 0.2s, font-size 0.2s" }}
-                    >
-                      {year}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="relative">
-              <div className="animate-radar h-6 w-6">
-                <Radar className="h-6 w-6 text-accent-red/30" />
-              </div>
-            </div>
-            <p className="mt-1 font-mono-custom text-[9px] text-dossier-600">
-              {selectedYear ? `LOCKED: ${selectedYear}` : "SCANNING"}
-            </p>
           </div>
         </div>
 
-        <AnimatePresence>
-          {hoveredYear && dossiersByYear[hoveredYear] && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="mx-auto mt-2 flex max-w-md items-center justify-center gap-3"
-            >
-              <p className="font-mono-custom text-xs text-dossier-500">
-                DOSSIER AVAILABLE
-              </p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayAudio(hoveredYear);
-                }}
-                className="flex items-center gap-1 rounded border border-accent-red/30 px-2 py-0.5 text-[10px] text-accent-red transition-colors hover:bg-accent-red/10"
-              >
-                <Play className="h-3 w-3" />
-                Play Anthem
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="relative mt-1 h-4">
+          <div className="absolute left-0 right-0 top-1/2 h-[1px] -translate-y-1/2 bg-zinc-800" />
+          <div className="mx-auto flex w-fit gap-0">
+            {worldCupYears.map((year) => (
+              <div key={year} className="flex justify-center" style={{ width: 36 }}>
+                <div
+                  className={`freq-tick ${
+                    dossiersByYear[year] || selectedYear === year ? "active" : ""
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="mt-4 text-center">
-          <p className="font-mono-custom text-[10px] text-dossier-600">
-            {selectedYear
-              ? `ACTIVE FILTER: WORLD CUP ${selectedYear}`
-              : "ALL DOSSIERS DISPLAYED — SELECT A YEAR TO FILTER"}
-          </p>
+          <AnimatePresence mode="wait">
+            {selectedYear ? (
+              <motion.div
+                key="selected"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center gap-3"
+              >
+                <span className="font-mono-custom text-[9px] text-tactical-amber">
+                  LOCKED: {selectedYear}
+                </span>
+                <span className="text-zinc-700">|</span>
+                <span className="font-mono-custom text-[9px] text-zinc-500">
+                  {getHostCode(selectedYear)} // {worldCupYears.indexOf(selectedYear) + 1} OF {worldCupYears.length}
+                </span>
+                <button
+                  onClick={() => onPlayAudio(selectedYear)}
+                  className="flex items-center gap-1 rounded-none border border-[#ff2e2e]/30 px-2 py-0.5 text-[9px] text-[#ff2e2e] transition-colors hover:bg-[#ff2e2e]/10"
+                >
+                  ▶ PLAY ANTHEM
+                </button>
+              </motion.div>
+            ) : (
+              <motion.p
+                key="all"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="font-mono-custom text-[9px] text-zinc-600"
+              >
+                ALL BANDS ACTIVE — SELECT A FREQUENCY TO FILTER
+              </motion.p>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>

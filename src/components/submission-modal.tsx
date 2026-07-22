@@ -82,28 +82,28 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative z-10 w-full max-w-lg rounded-xl border border-dossier-700 bg-dossier-900 shadow-2xl"
+            className="relative z-10 w-full max-w-lg rounded-none border border-zinc-800 bg-zinc-950 shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-dossier-700 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent-red/30 bg-accent-red/10">
-                  <Upload className="h-4 w-4 text-accent-red" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10">
+                  <Upload className="h-4 w-4 text-[#ff2e2e]" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-dossier-100">Submit Classified Intel</h2>
-                  <p className="text-[10px] text-dossier-500">Your identity remains sealed</p>
+                  <h2 className="font-display text-sm font-bold text-zinc-100 tracking-wider">SUBMIT INTEL</h2>
+                  <p className="font-mono-custom text-[9px] text-zinc-500">YOUR IDENTITY REMAINS SEALED</p>
                 </div>
               </div>
               <button
                 onClick={() => onOpenChange(false)}
-                className="rounded-md p-1.5 text-dossier-500 transition-colors hover:text-dossier-300 hover:bg-dossier-800"
+                className="rounded-none p-1.5 text-zinc-500 transition-colors hover:text-zinc-300 hover:bg-zinc-800"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -111,42 +111,42 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
 
             <form onSubmit={handleSubmit} className="space-y-4 p-5">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-dossier-500 uppercase">
-                  Title
+                <label className="mb-1 block font-mono-custom text-[9px] font-semibold tracking-wider text-zinc-500">
+                  TITLE
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., The Phantom Goal"
-                  className="w-full rounded-md border border-dossier-700 bg-dossier-800 px-3 py-2 text-sm text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                  className="w-full rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono-custom text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                   required
                   maxLength={100}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-dossier-500 uppercase">
-                  Description
+                <label className="mb-1 block font-mono-custom text-[9px] font-semibold tracking-wider text-zinc-500">
+                  DESCRIPTION
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the secret intel..."
                   rows={3}
-                  className="w-full resize-none rounded-md border border-dossier-700 bg-dossier-800 px-3 py-2 text-sm text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                  className="w-full resize-none rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono-custom text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                   required
                   maxLength={500}
                 />
-                <p className="mt-1 text-right text-[10px] text-dossier-600">
+                <p className="mt-1 text-right font-mono-custom text-[9px] text-zinc-600">
                   {description.length}/500
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold tracking-wider text-dossier-500 uppercase">
-                    Tournament Year
+                  <label className="mb-1 block font-mono-custom text-[9px] font-semibold tracking-wider text-zinc-500">
+                    TOURNAMENT YEAR
                   </label>
                   <input
                     type="number"
@@ -156,19 +156,19 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
                     min={1930}
                     max={2026}
                     step={4}
-                    className="w-full rounded-md border border-dossier-700 bg-dossier-800 px-3 py-2 text-sm text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                    className="w-full rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono-custom text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold tracking-wider text-dossier-500 uppercase">
-                    Media URL
+                  <label className="mb-1 block font-mono-custom text-[9px] font-semibold tracking-wider text-zinc-500">
+                    MEDIA URL
                   </label>
                   <input
                     type="url"
                     value={mediaUrl}
                     onChange={(e) => setMediaUrl(e.target.value)}
                     placeholder="YouTube / Image link"
-                    className="w-full rounded-md border border-dossier-700 bg-dossier-800 px-3 py-2 text-sm text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                    className="w-full rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono-custom text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                   />
                 </div>
               </div>
@@ -185,26 +185,26 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
               </div>
 
               {submitting && (
-                <div className="flex items-center gap-2 rounded-md border border-accent-amber/30 bg-accent-amber/10 px-3 py-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-accent-amber" />
-                  <span className="text-xs text-accent-amber">Verifying and submitting your intel...</span>
+                <div className="flex items-center gap-2 rounded-none border border-tactical-amber/30 bg-tactical-amber/10 px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-tactical-amber" />
+                  <span className="font-mono-custom text-[10px] text-tactical-amber">TRANSMITTING INTEL...</span>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={submitting || !token || !title.trim() || !description.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm font-bold text-accent-red transition-all hover:bg-accent-red/20 disabled:opacity-40"
+                className="flex w-full items-center justify-center gap-2 rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 px-4 py-3 font-display text-xs font-bold text-[#ff2e2e] tracking-wider transition-all hover:bg-[#ff2e2e]/20 disabled:opacity-40"
               >
                 {submitting ? (
                   <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-red border-t-transparent" />
-                    Submitting...
+                    <span className="h-4 w-4 animate-spin rounded-none border-2 border-[#ff2e2e] border-t-transparent" />
+                    TRANSMITTING...
                   </>
                 ) : (
                   <>
                     <Shield className="h-4 w-4" />
-                    Submit to Archives
+                    SUBMIT TO ARCHIVES
                   </>
                 )}
               </button>

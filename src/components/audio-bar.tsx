@@ -96,11 +96,8 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
           onStateChange: (e: any) => {
             const s = e.data;
             setBuffering(s === 3);
-            if (s === 1) {
-              setIsPlaying(true);
-            } else if (s === 2 || s === 0) {
-              setIsPlaying(false);
-            }
+            if (s === 1) setIsPlaying(true);
+            else if (s === 2 || s === 0) setIsPlaying(false);
             if (s === 0) {
               const idx = tracks.findIndex((t) => t.youtubeId === youtubeId);
               if (idx >= 0 && idx < tracks.length - 1) {
@@ -181,60 +178,61 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
     onSelectTrack(tracks[next]);
   };
 
-  if (!track) return null;
-
   return (
     <motion.div
-      initial={{ y: 80 }}
+      initial={{ y: 60 }}
       animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-dossier-700 bg-dossier-900/98 backdrop-blur-xl scanline"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-accent-red/30 bg-accent-red/10 sm:flex">
-            <Disc3 className={`h-4 w-4 text-accent-red ${isPlaying ? "animate-spin" : ""}`} />
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-6 lg:px-8">
+
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className={`flex items-end gap-px h-5 ${!isPlaying ? "eq-idle" : ""}`}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="eq-bar" />
+            ))}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-dossier-100">
-              {track.title}
+          <div className="min-w-0 ml-2">
+            <p className="truncate font-display text-xs font-bold text-zinc-100">
+              {track?.title || "NO SIGNAL"}
             </p>
-            <p className="truncate text-xs text-dossier-500">
-              {track.artist}
+            <p className="truncate font-mono-custom text-[9px] text-zinc-500">
+              {track?.artist || "—"}
             </p>
           </div>
         </div>
 
-        <div className="hidden items-center gap-2 text-xs text-dossier-500 sm:flex">
+        <div className="hidden items-center gap-2 font-mono-custom text-[9px] text-zinc-500 sm:flex">
           <Globe className="h-3 w-3" />
-          <span>{track.hostNation} · {track.year}</span>
+          <span>{track?.hostNation} · {track?.year}</span>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             onClick={() => skipTrack(-1)}
-            className="rounded-md p-1.5 text-dossier-400 transition-colors hover:text-dossier-100 hover:bg-dossier-800"
-            title="Previous anthem"
+            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+            title="Previous"
           >
             <SkipBack className="h-3.5 w-3.5" />
           </button>
 
           <button
             onClick={togglePlay}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-accent-red/30 bg-accent-red/10 text-accent-red transition-all hover:bg-accent-red/20 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 text-[#ff2e2e] transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
           >
             {buffering ? (
-              <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-accent-red" />
+              <span className="h-3 w-3 animate-pulse rounded-none bg-[#ff2e2e]" />
             ) : isPlaying ? (
-              <Pause className="h-4 w-4" />
+              <Pause className="h-3.5 w-3.5" />
             ) : (
-              <Play className="h-4 w-4" />
+              <Play className="h-3.5 w-3.5" />
             )}
           </button>
 
           <button
             onClick={() => skipTrack(1)}
-            className="rounded-md p-1.5 text-dossier-400 transition-colors hover:text-dossier-100 hover:bg-dossier-800"
-            title="Next anthem"
+            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+            title="Next"
           >
             <SkipForward className="h-3.5 w-3.5" />
           </button>
@@ -243,9 +241,9 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={toggleMute}
-            className="rounded-md p-1.5 text-dossier-400 transition-colors hover:text-dossier-100 hover:bg-dossier-800"
+            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
           >
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
           </button>
 
           <input
@@ -255,7 +253,7 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
             step="0.05"
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-dossier-700 accent-accent-red [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-red"
+            className="h-1 w-16 cursor-pointer appearance-none rounded-none bg-zinc-800 accent-[#ff2e2e] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-none [&::-webkit-slider-thumb]:bg-[#ff2e2e]"
           />
         </div>
       </div>

@@ -46,25 +46,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0, x: 100, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 100, scale: 0.9 }}
-              className={`flex w-72 items-start gap-3 rounded-lg border p-3 shadow-xl backdrop-blur-xl ${
+              className={`flex w-72 items-start gap-3 rounded-none border p-3 shadow-xl ${
                 toast.type === "success"
-                  ? "border-accent-green/30 bg-dossier-800/95"
+                  ? "border-[#22c55e]/30 bg-zinc-950/95"
                   : toast.type === "error"
-                    ? "border-accent-red/30 bg-dossier-800/95"
-                    : "border-accent-cyan/30 bg-dossier-800/95"
+                    ? "border-[#ff2e2e]/30 bg-zinc-950/95"
+                    : "border-[#06b6d4]/30 bg-zinc-950/95"
               }`}
             >
               {toast.type === "success" ? (
-                <CheckCircle className="h-4 w-4 flex-shrink-0 text-accent-green" />
+                <CheckCircle className="h-4 w-4 flex-shrink-0 text-[#22c55e]" />
               ) : toast.type === "error" ? (
-                <AlertCircle className="h-4 w-4 flex-shrink-0 text-accent-red" />
+                <AlertCircle className="h-4 w-4 flex-shrink-0 text-[#ff2e2e]" />
               ) : (
-                <Info className="h-4 w-4 flex-shrink-0 text-accent-cyan" />
+                <Info className="h-4 w-4 flex-shrink-0 text-[#06b6d4]" />
               )}
-              <p className="flex-1 text-xs text-dossier-200">{toast.message}</p>
+              <p className="flex-1 font-mono-custom text-[10px] text-zinc-300">{toast.message}</p>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="flex-shrink-0 text-dossier-500 hover:text-dossier-300"
+                className="flex-shrink-0 text-zinc-500 hover:text-zinc-300"
               >
                 <X className="h-3 w-3" />
               </button>

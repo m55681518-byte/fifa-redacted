@@ -36,13 +36,13 @@ export function CommentSection({ dossierId, comments, onAddComment }: CommentSec
     <div className="mt-3">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between rounded-md border border-dossier-700 bg-dossier-800/50 px-3 py-2 text-xs text-dossier-400 transition-colors hover:border-dossier-600 hover:text-dossier-300"
+        className="flex w-full items-center justify-between rounded-none border border-zinc-800 bg-zinc-900/50 px-3 py-2 font-mono-custom text-[10px] text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-300"
       >
         <span className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5" />
-          Comments ({comments.length})
+          <MessageSquare className="h-3 w-3" />
+          COMMENTS ({comments.length})
         </span>
-        {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
 
       <AnimatePresence>
@@ -55,24 +55,24 @@ export function CommentSection({ dossierId, comments, onAddComment }: CommentSec
           >
             <div className="mt-2 space-y-2">
               {comments.length === 0 && (
-                <p className="py-2 text-center text-xs text-dossier-600">
-                  No intel yet. Be the first to comment.
+                <p className="py-2 text-center font-mono-custom text-[10px] text-zinc-600">
+                  NO INTEL YET. BE THE FIRST TO COMMENT.
                 </p>
               )}
               {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="rounded-md border border-dossier-700/50 bg-dossier-800/30 px-3 py-2"
+                  className="rounded-none border border-zinc-800/50 bg-zinc-900/30 px-3 py-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono-custom text-[10px] font-bold tracking-wider text-accent-red">
+                    <span className="font-mono-custom text-[9px] font-bold tracking-wider text-[#ff2e2e]">
                       // {comment.author.toUpperCase()}
                     </span>
-                    <span className="text-[10px] text-dossier-600">
+                    <span className="font-mono-custom text-[8px] text-zinc-600">
                       {formatTimestamp(comment.timestamp)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-dossier-300">{comment.text}</p>
+                  <p className="mt-1 font-mono-custom text-[10px] text-zinc-400">{comment.text}</p>
                 </div>
               ))}
             </div>
@@ -84,7 +84,7 @@ export function CommentSection({ dossierId, comments, onAddComment }: CommentSec
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 maxLength={30}
-                className="w-full rounded-md border border-dossier-700 bg-dossier-900 px-3 py-1.5 text-xs text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                className="w-full rounded-none border border-zinc-800 bg-zinc-900 px-3 py-1.5 font-mono-custom text-[10px] text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                 required
               />
               <div className="flex items-center gap-2">
@@ -94,18 +94,18 @@ export function CommentSection({ dossierId, comments, onAddComment }: CommentSec
                   onChange={(e) => setText(e.target.value)}
                   maxLength={300}
                   rows={2}
-                  className="flex-1 resize-none rounded-md border border-dossier-700 bg-dossier-900 px-3 py-1.5 text-xs text-dossier-200 placeholder-dossier-600 outline-none transition-colors focus:border-accent-red/50"
+                  className="flex-1 resize-none rounded-none border border-zinc-800 bg-zinc-900 px-3 py-1.5 font-mono-custom text-[10px] text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-[#ff2e2e]/50"
                   required
                 />
                 <button
                   type="submit"
                   disabled={!text.trim() || !author.trim()}
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-accent-red/20 text-accent-red transition-colors hover:bg-accent-red/30 disabled:opacity-40"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-none bg-[#ff2e2e]/20 text-[#ff2e2e] transition-colors hover:bg-[#ff2e2e]/30 disabled:opacity-40"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <p className="text-right text-[10px] text-dossier-600">
+              <p className="text-right font-mono-custom text-[8px] text-zinc-600">
                 {text.length}/300
               </p>
             </form>
