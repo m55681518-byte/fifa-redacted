@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dossier-900: #09090b;
+  --color-dossier-800: #18181b;
+  --color-dossier-700: #27272a;
+  --color-dossier-600: #3f3f46;
+  --color-dossier-500: #52525b;
+  --color-dossier-400: #a1a1aa;
+  --color-dossier-300: #d4d4d8;
+  --color-dossier-200: #e4e4e7;
+  --color-dossier-100: #f4f4f5;
+  --color-accent-red: #ef4444;
+  --color-accent-yellow: #eab308;
+  --color-accent-amber: #f59e0b;
+}
+
+body {
+  background: #09090b;
+  color: #e4e4e7;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT6RDJ.woff2) format("woff2");
+}
+
+.font-mono-custom {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+}
+
+.classification-stamp {
+  transform: rotate(-12deg);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.6;
+  mix-blend-mode: difference;
+}
