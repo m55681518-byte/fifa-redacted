@@ -23,9 +23,13 @@
 }
 
 body {
-  background: #050505;
+  background: #121212;
   color: #d4d4d8;
   font-family: "Inter", "Chakra Petch", "Oswald", system-ui, -apple-system, sans-serif;
+}
+
+.bg-base {
+  background: #121212;
 }
 
 @font-face {
@@ -176,7 +180,7 @@ body {
 
 /* Glassmorphism container */
 .glass-panel {
-  background: rgba(9, 9, 11, 0.85);
+  background: rgba(18, 18, 18, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(39, 39, 42, 0.5);

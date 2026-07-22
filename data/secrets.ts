@@ -35,11 +35,11 @@ export const secretDossiers: SecretDossier[] = [
     classification: "TOP SECRET",
     mediaType: "youtube",
     mediaUrl: "https://www.youtube.com/embed/NQqhZxCJm8A",
-    thumbnailUrl: "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
       "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
+      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
+      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
     ],
     upvotes: 1284,
     comments: [
@@ -57,12 +57,12 @@ export const secretDossiers: SecretDossier[] = [
     description: "Internal FIFA memos reveal the Argentine military junta pressured referees and match officials during the 1978 World Cup. Peru's shocking 6-0 loss to Argentina in the second round—a result that eliminated Brazil—was allegedly orchestrated by the Videla regime in exchange for political favors and financial guarantees totaling over $50 million in today's currency. Whistleblower accounts from within the Argentine Football Association detail covert meetings where match outcomes were discussed as matters of national security, not sport.",
     classification: "TOP SECRET",
     mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80",
+    mediaUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80",
-      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
       "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
+      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
+      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
     ],
     upvotes: 967,
     comments: [
@@ -103,11 +103,11 @@ export const secretDossiers: SecretDossier[] = [
     classification: "TOP SECRET",
     mediaType: "youtube",
     mediaUrl: "https://www.youtube.com/embed/oCw1T1Y6F4M",
-    thumbnailUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
       "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
       "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
+      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
     ],
     upvotes: 1756,
     comments: [
@@ -125,11 +125,11 @@ export const secretDossiers: SecretDossier[] = [
     classification: "CONFIDENTIAL",
     mediaType: "youtube",
     mediaUrl: "https://www.youtube.com/embed/0Ykm5R_cMGg",
-    thumbnailUrl: "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80",
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
       "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
+      "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
+      "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
     ],
     upvotes: 3210,
     comments: [
@@ -150,8 +150,8 @@ export const secretDossiers: SecretDossier[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
+      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
       "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
     ],
     upvotes: 845,
     comments: [
@@ -173,8 +173,8 @@ export const secretDossiers: SecretDossier[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-      "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80",
+      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
+      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
     ],
     upvotes: 2891,
     comments: [
@@ -195,8 +195,8 @@ export const secretDossiers: SecretDossier[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
+      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
       "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
     ],
     upvotes: 1534,
     comments: [
@@ -214,11 +214,11 @@ export const secretDossiers: SecretDossier[] = [
     description: "Whistleblower medical staff have leaked a halftime injury report from the 2026 World Cup group stage. A star forward was diagnosed with a grade 2 concussion following a collision in the 38th minute but was cleared to continue playing after a 'spirited discussion' in the tunnel between team doctors and tournament medical officers. FIFA's independent medical panel was not informed until 72 hours later. The player's identity is redacted pending investigation, but match footage shows the athlete stumbling visibly upon rising from the tackle. The leaked report recommends an overhaul of in-game concussion protocols, recommendations FIFA has declined to implement.",
     classification: "TOP SECRET",
     mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
+    mediaUrl: "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
       "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
+      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
       "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
     ],
     upvotes: 412,

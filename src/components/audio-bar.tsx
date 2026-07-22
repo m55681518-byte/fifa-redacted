@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Pause,
@@ -11,6 +11,8 @@ import {
   Globe,
   SkipForward,
   SkipBack,
+  X,
+  Disc,
 } from "lucide-react";
 
 interface TrackInfo {
@@ -178,86 +180,118 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
     onSelectTrack(tracks[next]);
   };
 
+  const [dismissed, setDismissed] = useState(false);
+
   return (
-    <motion.div
-      initial={{ y: 60 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
-    >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-6 lg:px-8">
-
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className={`flex items-end gap-px h-5 ${!isPlaying ? "eq-idle" : ""}`}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="eq-bar" />
-            ))}
-          </div>
-          <div className="min-w-0 ml-2">
-            <p className="truncate font-display text-xs font-bold text-zinc-100">
-              {track?.title || "NO SIGNAL"}
-            </p>
-            <p className="truncate font-mono-custom text-[9px] text-zinc-500">
-              {track?.artist || "—"}
-            </p>
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 font-mono-custom text-[9px] text-zinc-500 sm:flex">
-          <Globe className="h-3 w-3" />
-          <span>{track?.hostNation} · {track?.year}</span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => skipTrack(-1)}
-            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
-            title="Previous"
+    <>
+      <AnimatePresence>
+        {!dismissed && (
+          <motion.div
+            initial={{ y: 60 }}
+            animate={{ y: 0 }}
+            exit={{ y: 60 }}
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
           >
-            <SkipBack className="h-3.5 w-3.5" />
-          </button>
+            <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-6 lg:px-8">
 
-          <button
-            onClick={togglePlay}
-            className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 text-[#ff2e2e] transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className={`flex items-end gap-px h-5 ${!isPlaying ? "eq-idle" : ""}`}>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="eq-bar" />
+                  ))}
+                </div>
+                <div className="min-w-0 ml-2">
+                  <p className="truncate font-display text-xs font-bold text-zinc-100">
+                    {track?.title || "NO SIGNAL"}
+                  </p>
+                  <p className="truncate font-mono-custom text-[9px] text-zinc-500">
+                    {track?.artist || "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="hidden items-center gap-2 font-mono-custom text-[9px] text-zinc-500 sm:flex">
+                <Globe className="h-3 w-3" />
+                <span>{track?.hostNation} · {track?.year}</span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => skipTrack(-1)}
+                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+                  title="Previous"
+                >
+                  <SkipBack className="h-3.5 w-3.5" />
+                </button>
+
+                <button
+                  onClick={togglePlay}
+                  className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 text-[#ff2e2e] transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
+                >
+                  {buffering ? (
+                    <span className="h-3 w-3 animate-pulse rounded-none bg-[#ff2e2e]" />
+                  ) : isPlaying ? (
+                    <Pause className="h-3.5 w-3.5" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5" />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => skipTrack(1)}
+                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+                  title="Next"
+                >
+                  <SkipForward className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleMute}
+                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+                >
+                  {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                </button>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="h-1 w-12 cursor-pointer appearance-none rounded-none bg-zinc-800 accent-[#ff2e2e] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-none [&::-webkit-slider-thumb]:bg-[#ff2e2e]"
+                />
+
+                <button
+                  onClick={() => setDismissed(true)}
+                  className="rounded-none p-1.5 text-zinc-500 transition-colors hover:text-zinc-300 hover:bg-zinc-800"
+                  title="Dismiss"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+            <div ref={containerRef} className="hidden" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {dismissed && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setDismissed(false)}
+            className="fixed bottom-4 right-4 z-50 flex h-10 w-10 items-center justify-center border border-[#ff2e2e]/30 bg-zinc-950/90 text-[#ff2e2e] shadow-lg backdrop-blur-md transition-all hover:bg-[#ff2e2e]/20 active:scale-90"
+            title="Open audio player"
           >
-            {buffering ? (
-              <span className="h-3 w-3 animate-pulse rounded-none bg-[#ff2e2e]" />
-            ) : isPlaying ? (
-              <Pause className="h-3.5 w-3.5" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-          </button>
-
-          <button
-            onClick={() => skipTrack(1)}
-            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
-            title="Next"
-          >
-            <SkipForward className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleMute}
-            className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
-          >
-            {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-          </button>
-
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
-            className="h-1 w-16 cursor-pointer appearance-none rounded-none bg-zinc-800 accent-[#ff2e2e] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-none [&::-webkit-slider-thumb]:bg-[#ff2e2e]"
-          />
-        </div>
-      </div>
-      <div ref={containerRef} className="hidden" />
-    </motion.div>
+            <Disc className="h-4 w-4" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
