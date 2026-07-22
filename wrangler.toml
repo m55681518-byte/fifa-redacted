@@ -1,4 +1,9 @@
 name = "fifa-redacted"
-pages_build_output_dir = ".vercel/output/static"
-compatibility_date = "2026-07-01"
+account_id = "66a463623b9929ea2e1eb3a700291e08"
+main = ".open-next/worker.js"
+compatibility_date = "2026-07-22"
 compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
