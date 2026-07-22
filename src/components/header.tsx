@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Plus, FileText } from "lucide-react";
+import { Shield, Plus, FileText, Activity } from "lucide-react";
 import { SubmissionModal } from "./submission-modal";
 
 export function Header({ archiveCount }: { archiveCount: number }) {
@@ -9,10 +9,10 @@ export function Header({ archiveCount }: { archiveCount: number }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-dossier-700 bg-dossier-900/95 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-dossier-700/80 bg-dossier-900/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent-red/40 bg-accent-red/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent-red/40 bg-accent-red/10 neon-glow-red">
               <Shield className="h-5 w-5 text-accent-red" />
             </div>
             <div>
@@ -26,7 +26,7 @@ export function Header({ archiveCount }: { archiveCount: number }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-2 rounded-md border border-dossier-700 bg-dossier-800 px-3 py-1.5 text-xs sm:flex">
+            <div className="hidden items-center gap-2 rounded-md border border-dossier-700 bg-dossier-800/50 px-3 py-1.5 text-xs sm:flex">
               <FileText className="h-3.5 w-3.5 text-dossier-400" />
               <span className="text-dossier-400">
                 Archive:{" "}

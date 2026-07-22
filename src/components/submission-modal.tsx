@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Shield } from "lucide-react";
+import { X, Upload, Shield, AlertTriangle } from "lucide-react";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { useToast } from "./toast";
 
 interface SubmissionModalProps {
   open: boolean;
@@ -16,25 +17,27 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
   const [mediaUrl, setMediaUrl] = useState("");
   const [year, setYear] = useState("");
   const [token, setToken] = useState<string>("");
-  const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
+  const [submitting, setSubmitting] = useState(false);
+  const { addToast } = useToast();
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!title.trim() || !description.trim() || !token) return;
 
-      setStatus("verifying");
+      setSubmitting(true);
 
       try {
-        const res = await fetch("/api/verify-turnstile", {
+        const verifyRes = await fetch("/api/verify-turnstile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
         });
+        const verifyData = await verifyRes.json();
 
-        const { success } = await res.json();
-        if (!success) {
-          setStatus("error");
+        if (!verifyData.success) {
+          addToast("error", "Turnstile verification failed. Please try again.");
+          setSubmitting(false);
           return;
         }
 
@@ -50,24 +53,24 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
         });
 
         if (submitRes.ok) {
-          setStatus("success");
-          setTimeout(() => {
-            onOpenChange(false);
-            setTitle("");
-            setDescription("");
-            setMediaUrl("");
-            setYear("");
-            setToken("");
-            setStatus("idle");
-          }, 1500);
+          addToast("success", "Your intel has been submitted to the archives. Identity remains sealed.");
+          onOpenChange(false);
+          setTitle("");
+          setDescription("");
+          setMediaUrl("");
+          setYear("");
+          setToken("");
         } else {
-          setStatus("error");
+          const err = await submitRes.json().catch(() => ({}));
+          addToast("error", err?.error || "Submission failed. Try again.");
         }
       } catch {
-        setStatus("error");
+        addToast("error", "Network error. Check your connection and try again.");
+      } finally {
+        setSubmitting(false);
       }
     },
-    [title, description, mediaUrl, year, token, onOpenChange]
+    [title, description, mediaUrl, year, token, onOpenChange, addToast]
   );
 
   return (
@@ -135,6 +138,9 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
                   required
                   maxLength={500}
                 />
+                <p className="mt-1 text-right text-[10px] text-dossier-600">
+                  {description.length}/500
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -178,17 +184,23 @@ export function SubmissionModal({ open, onOpenChange }: SubmissionModalProps) {
                 />
               </div>
 
+              {submitting && (
+                <div className="flex items-center gap-2 rounded-md border border-accent-amber/30 bg-accent-amber/10 px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-accent-amber" />
+                  <span className="text-xs text-accent-amber">Verifying and submitting your intel...</span>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={status === "verifying" || !token || !title.trim() || !description.trim()}
+                disabled={submitting || !token || !title.trim() || !description.trim()}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm font-bold text-accent-red transition-all hover:bg-accent-red/20 disabled:opacity-40"
               >
-                {status === "verifying" ? (
-                  "Verifying..."
-                ) : status === "success" ? (
-                  "✓ Submitted"
-                ) : status === "error" ? (
-                  "Error — Try Again"
+                {submitting ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-red border-t-transparent" />
+                    Submitting...
+                  </>
                 ) : (
                   <>
                     <Shield className="h-4 w-4" />

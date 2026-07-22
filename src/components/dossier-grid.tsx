@@ -7,18 +7,32 @@ import { SecretCard } from "./secret-card";
 import { HeroTimeline } from "./hero-timeline";
 import { AudioBar } from "./audio-bar";
 import { Header } from "./header";
+import { ToastProvider } from "./toast";
 
 interface TrackInfo {
   year: number;
   title: string;
   artist: string;
   hostNation: string;
+  youtubeId: string;
 }
 
 export function DossierGrid() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [audioTrack, setAudioTrack] = useState<TrackInfo | null>(null);
   const [dossiers, setDossiers] = useState(secretDossiers);
+
+  const allTracks = useMemo<TrackInfo[]>(
+    () =>
+      dossiers.map((d) => ({
+        year: d.year,
+        title: d.anthem.title,
+        artist: d.anthem.artist,
+        hostNation: d.hostNation,
+        youtubeId: d.anthem.youtubeId,
+      })),
+    [dossiers]
+  );
 
   const filtered = useMemo(
     () =>
@@ -38,16 +52,28 @@ export function DossierGrid() {
           title: dossier.anthem.title,
           artist: dossier.anthem.artist,
           hostNation: dossier.hostNation,
+          youtubeId: dossier.anthem.youtubeId,
         });
       }
     }
   };
 
+  const handlePlayAudio = (year: number) => {
+    const dossier = dossiers.find((d) => d.year === year);
+    if (dossier) {
+      setAudioTrack({
+        year: dossier.year,
+        title: dossier.anthem.title,
+        artist: dossier.anthem.artist,
+        hostNation: dossier.hostNation,
+        youtubeId: dossier.anthem.youtubeId,
+      });
+    }
+  };
+
   const handleUpvote = (id: string) => {
     setDossiers((prev) =>
-      prev.map((d) =>
-        d.id === id ? { ...d, upvotes: d.upvotes + 1 } : d
-      )
+      prev.map((d) => (d.id === id ? { ...d, upvotes: d.upvotes + 1 } : d))
     );
     fetch("/api/upvote", {
       method: "POST",
@@ -72,67 +98,59 @@ export function DossierGrid() {
   };
 
   return (
-    <div className="pb-24">
-      <Header archiveCount={dossiers.length} />
+    <ToastProvider>
+      <div className="pb-24">
+        <Header archiveCount={dossiers.length} />
 
-      <HeroTimeline
-        selectedYear={selectedYear}
-        onSelectYear={handleSelectYear}
-        audioYear={audioTrack?.year ?? null}
-        onPlayAudio={(year) => {
-          const dossier = dossiers.find((d) => d.year === year);
-          if (dossier) {
-            setAudioTrack({
-              year: dossier.year,
-              title: dossier.anthem.title,
-              artist: dossier.anthem.artist,
-              hostNation: dossier.hostNation,
-            });
-          }
-        }}
-      />
+        <HeroTimeline
+          selectedYear={selectedYear}
+          onSelectYear={handleSelectYear}
+          onPlayAudio={handlePlayAudio}
+        />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-dossier-100">
-            {selectedYear
-              ? `Dossiers — World Cup ${selectedYear}`
-              : "All Classified Dossiers"}
-          </h2>
-          <span className="font-mono-custom text-xs text-dossier-500">
-            {filtered.length} record{filtered.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        <motion.div
-          layout
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <AnimatePresence mode="popLayout">
-            {filtered.map((dossier) => (
-              <SecretCard
-                key={dossier.id}
-                dossier={dossier}
-                onUpvote={handleUpvote}
-                onAddComment={handleAddComment}
-              />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="font-mono-custom text-sm text-dossier-600">
-              NO CLASSIFIED RECORDS FOUND
-            </p>
-            <p className="mt-1 text-xs text-dossier-700">
-              Try selecting a different tournament year
-            </p>
+        <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-dossier-100">
+              {selectedYear
+                ? `Dossiers — World Cup ${selectedYear}`
+                : "All Classified Dossiers"}
+            </h2>
+            <span className="font-mono-custom text-xs text-dossier-500">
+              {filtered.length} record{filtered.length !== 1 ? "s" : ""}
+            </span>
           </div>
-        )}
-      </main>
 
-      <AudioBar track={audioTrack} />
-    </div>
+          <motion.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((dossier) => (
+                <SecretCard
+                  key={dossier.id}
+                  dossier={dossier}
+                  onUpvote={handleUpvote}
+                  onAddComment={handleAddComment}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+
+          {filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <p className="font-mono-custom text-sm text-dossier-600">
+                NO CLASSIFIED RECORDS FOUND
+              </p>
+              <p className="mt-1 text-xs text-dossier-700">
+                Try selecting a different tournament year
+              </p>
+            </div>
+          )}
+        </main>
+
+        <AudioBar
+          track={audioTrack}
+          tracks={allTracks}
+          onSelectTrack={setAudioTrack}
+        />
+      </div>
+    </ToastProvider>
   );
 }
