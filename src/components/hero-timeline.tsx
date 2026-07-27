@@ -10,12 +10,6 @@ interface HeroTimelineProps {
   onPlayAudio: (year: number) => void;
 }
 
-const clusterColors: Record<string, string> = {
-  "1930-1962": "from-cyan-500/20 to-transparent",
-  "1966-1994": "from-amber-500/20 to-transparent",
-  "1998-2026": "from-[#ff2e2e]/20 to-transparent",
-};
-
 const clusterLabels: Record<string, string> = {
   "1930-1962": "BAND 1 // EARLY",
   "1966-1994": "BAND 2 // GOLDEN",
@@ -195,7 +189,7 @@ export function HeroTimeline({ selectedYear, onSelectYear, onPlayAudio }: HeroTi
                 </span>
                 <span className="text-zinc-700">|</span>
                 <span className="font-mono-custom text-[9px] text-zinc-500">
-                  {getHostCode(selectedYear)} // {worldCupYears.indexOf(selectedYear) + 1} OF {worldCupYears.length}
+                  {getHostCode(selectedYear)}{" // "}{worldCupYears.indexOf(selectedYear) + 1} OF {worldCupYears.length}
                 </span>
                 <button
                   onClick={() => onPlayAudio(selectedYear)}

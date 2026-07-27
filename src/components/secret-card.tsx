@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import NextImage from "next/image";
+import { motion } from "framer-motion";
 import {
-  ChevronUp,
-  Calendar,
-  Image,
-  ExternalLink,
+  Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
@@ -16,14 +14,45 @@ import {
 import type { SecretDossier, Comment } from "../../data/secrets";
 import { CommentSection } from "./comment-section";
 
-const AVATARS = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪"];
+/**
+ * Subscribes to the `upvoted_<id>` localStorage flag as an external store.
+ * `useSyncExternalStore` reads the value during render (no cascading setState
+ * in an effect) and returns `false` on the server so SSR markup stays stable.
+ */
+function useUpvotedFlag(dossierId: string): [boolean, () => void] {
+  const key = `upvoted_${dossierId}`;
 
-function getAvatar(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
-  }
-  return AVATARS[Math.abs(hash) % AVATARS.length];
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    window.addEventListener("storage", onStoreChange);
+    window.addEventListener("upvote-changed", onStoreChange);
+    return () => {
+      window.removeEventListener("storage", onStoreChange);
+      window.removeEventListener("upvote-changed", onStoreChange);
+    };
+  }, []);
+
+  const getSnapshot = useCallback(() => {
+    try {
+      return localStorage.getItem(key) === "true";
+    } catch {
+      return false;
+    }
+  }, [key]);
+
+  const getServerSnapshot = useCallback(() => false, []);
+
+  const upvoted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const markUpvoted = useCallback(() => {
+    try {
+      localStorage.setItem(key, "true");
+    } catch {
+      /* storage unavailable (private mode / quota) — keep the optimistic UI */
+    }
+    window.dispatchEvent(new Event("upvote-changed"));
+  }, [key]);
+
+  return [upvoted, markUpvoted];
 }
 
 interface SecretCardProps {
@@ -33,21 +62,17 @@ interface SecretCardProps {
 }
 
 export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps) {
-  const [localUpvoted, setLocalUpvoted] = useState(false);
-  const [localCount, setLocalCount] = useState(dossier.upvotes);
+  const [localUpvoted, markUpvoted] = useUpvotedFlag(dossier.id);
+  const [extraVotes, setExtraVotes] = useState(0);
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [videoError, setVideoError] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(`upvoted_${dossier.id}`);
-    if (stored === "true") setLocalUpvoted(true);
-  }, [dossier.id]);
+  const localCount = dossier.upvotes + extraVotes;
 
   const handleUpvote = () => {
     if (localUpvoted) return;
-    setLocalUpvoted(true);
-    setLocalCount((c) => c + 1);
-    localStorage.setItem(`upvoted_${dossier.id}`, "true");
+    setExtraVotes(1);
+    markUpvoted();
     onUpvote(dossier.id);
   };
 
@@ -115,10 +140,12 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
           </div>
         ) : (
           <div className="relative h-full w-full">
-            <img
+            <NextImage
               src={currentMedia}
               alt={dossier.title}
-              className="archival-photo h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="archival-photo object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
             {videoError && (
@@ -217,7 +244,7 @@ export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps)
 
           {dossier.mediaType === "gallery" && (
             <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-              <Image className="h-3 w-3" />
+              <ImageIcon className="h-3 w-3" />
               {dossier.gallery.length} FRAMES
             </span>
           )}

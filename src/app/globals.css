@@ -25,40 +25,26 @@
 body {
   background: #121212;
   color: #d4d4d8;
-  font-family: "Inter", "Chakra Petch", "Oswald", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
 }
 
 .bg-base {
   background: #121212;
 }
 
-@font-face {
-  font-family: "JetBrains Mono";
-  font-style: normal;
-  font-weight: 400 700;
-  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT6RDJ.woff2) format("woff2");
-}
-
-@font-face {
-  font-family: "Chakra Petch";
-  font-style: normal;
-  font-weight: 400 700;
-  src: url(https://fonts.gstatic.com/s/chakrapetch/v9/cIf6MapbsEk7TDLwtEzW1jI.woff2) format("woff2");
-}
-
 .font-display {
-  font-family: "Chakra Petch", "Oswald", sans-serif;
+  font-family: var(--font-display), var(--font-display-alt), sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
 .font-mono-custom {
-  font-family: "JetBrains Mono", "Share Tech Mono", monospace;
+  font-family: var(--font-mono), "Share Tech Mono", monospace;
 }
 
 .classification-stamp {
   transform: rotate(-12deg);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono), monospace;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -84,7 +70,7 @@ body {
   position: absolute;
   z-index: 10;
   pointer-events: none;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   color: rgba(255, 46, 46, 0.25);
   line-height: 1;
@@ -137,7 +123,7 @@ body {
 
 /* Live timecode */
 .timecode-overlay {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 9px;
   color: rgba(255, 46, 46, 0.7);
   letter-spacing: 0.1em;

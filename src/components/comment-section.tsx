@@ -66,7 +66,7 @@ export function CommentSection({ dossierId, comments, onAddComment }: CommentSec
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono-custom text-[9px] font-bold tracking-wider text-[#ff2e2e]">
-                      // {comment.author.toUpperCase()}
+                      {"// "}{comment.author.toUpperCase()}
                     </span>
                     <span className="font-mono-custom text-[8px] text-zinc-600">
                       {formatTimestamp(comment.timestamp)}

@@ -7,13 +7,13 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Disc3,
   Globe,
   SkipForward,
   SkipBack,
   X,
   Disc,
 } from "lucide-react";
+import { YTPlayerState, type YTPlayer, type YTStateChangeEvent } from "@/types/youtube";
 
 interface TrackInfo {
   year: number;
@@ -29,8 +29,7 @@ interface AudioBarProps {
   onSelectTrack: (track: TrackInfo) => void;
 }
 
-let ytPlayerInstance: any = null;
-let ytPlayerReady = false;
+let ytPlayerInstance: YTPlayer | null = null;
 
 export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -43,10 +42,10 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   const playerReadyRef = useRef(false);
 
   const initPlayer = useCallback(async (youtubeId: string) => {
-    if (!(window as any).YT?.Player) {
+    if (!window.YT?.Player) {
       await new Promise<void>((resolve) => {
         const check = () => {
-          if ((window as any).YT?.Player) resolve();
+          if (window.YT?.Player) resolve();
           else setTimeout(check, 100);
         };
         check();
@@ -69,8 +68,10 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
     div.id = "yt-audio-player";
     container.appendChild(div);
 
+    const YT = window.YT;
+    if (!YT) return;
+
     try {
-      const YT = (window as any).YT;
       ytPlayerInstance = new YT.Player(div.id, {
         height: "0",
         width: "0",
@@ -87,20 +88,19 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
           rel: 0,
         },
         events: {
-          onReady: () => {
+          onReady: (event) => {
             playerReadyRef.current = true;
-            ytPlayerReady = true;
             try {
-              ytPlayerInstance.setVolume(volumeRef.current * 100);
-              ytPlayerInstance.playVideo();
+              event.target.setVolume(volumeRef.current * 100);
+              event.target.playVideo();
             } catch {}
           },
-          onStateChange: (e: any) => {
+          onStateChange: (e: YTStateChangeEvent) => {
             const s = e.data;
-            setBuffering(s === 3);
-            if (s === 1) setIsPlaying(true);
-            else if (s === 2 || s === 0) setIsPlaying(false);
-            if (s === 0) {
+            setBuffering(s === YTPlayerState.BUFFERING);
+            if (s === YTPlayerState.PLAYING) setIsPlaying(true);
+            else if (s === YTPlayerState.PAUSED || s === YTPlayerState.ENDED) setIsPlaying(false);
+            if (s === YTPlayerState.ENDED) {
               const idx = tracks.findIndex((t) => t.youtubeId === youtubeId);
               if (idx >= 0 && idx < tracks.length - 1) {
                 onSelectTrack(tracks[idx + 1]);
@@ -117,8 +117,8 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   }, [tracks, onSelectTrack]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !(window as any).__ytApiLoaded) {
-      (window as any).__ytApiLoaded = true;
+    if (typeof window !== "undefined" && !window.__ytApiLoaded) {
+      window.__ytApiLoaded = true;
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       document.head.appendChild(tag);
@@ -126,17 +126,18 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   }, []);
 
   useEffect(() => {
-    if (!track) {
-      setIsPlaying(false);
-      setBuffering(false);
-      return;
-    }
+    if (!track) return;
     initPlayer(track.youtubeId);
   }, [track, initPlayer]);
 
+  // With no track loaded there is nothing to play or buffer. Deriving these
+  // during render avoids a cascading setState inside the effect above.
+  const playing = track ? isPlaying : false;
+  const isBuffering = track ? buffering : false;
+
   const togglePlay = () => {
     if (!ytPlayerInstance || !playerReadyRef.current || !track) return;
-    if (isPlaying) {
+    if (playing) {
       try { ytPlayerInstance.pauseVideo(); } catch {}
     } else {
       try { ytPlayerInstance.playVideo(); } catch {}
@@ -195,7 +196,7 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
             <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-6 lg:px-8">
 
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className={`flex items-end gap-px h-5 ${!isPlaying ? "eq-idle" : ""}`}>
+                <div className={`flex items-end gap-px h-5 ${!playing ? "eq-idle" : ""}`}>
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="eq-bar" />
                   ))}
@@ -228,9 +229,9 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
                   onClick={togglePlay}
                   className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 text-[#ff2e2e] transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
                 >
-                  {buffering ? (
+                  {isBuffering ? (
                     <span className="h-3 w-3 animate-pulse rounded-none bg-[#ff2e2e]" />
-                  ) : isPlaying ? (
+                  ) : playing ? (
                     <Pause className="h-3.5 w-3.5" />
                   ) : (
                     <Play className="h-3.5 w-3.5" />

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { secretDossiers, type SecretDossier, type Comment } from "../../data/secrets";
+import { secretDossiers, type Comment } from "../../data/secrets";
 import { SecretCard } from "./secret-card";
 import { HeroTimeline } from "./hero-timeline";
 import { AudioBar } from "./audio-bar";
