@@ -1,6 +1,13 @@
 import { ImageResponse } from "next/og";
+import { allDossiers } from "../../data/secrets";
+import { EXHIBITS } from "../../data/documents";
 
-export const alt = "FIFA Redacted — The Unofficial Secrets Archive";
+const RECORD_COUNT = allDossiers.length;
+const FIRST_YEAR = Math.min(...allDossiers.map((d) => d.year));
+const LAST_YEAR = Math.max(...allDossiers.map((d) => d.year));
+const DOCUMENT_COUNT = Object.keys(EXHIBITS).length;
+
+export const alt = "FIFA Redacted — a sourced archive of FIFA's institutional failures";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,11 +42,11 @@ export default function OpengraphImage() {
             style={{
               color: "#a8a8b3",
               fontSize: 20,
-              letterSpacing: 6,
+              letterSpacing: 5,
               fontWeight: 700,
             }}
           >
-            UNOFFICIAL SECRETS ARCHIVE
+            A SOURCED PUBLIC ARCHIVE
           </div>
         </div>
 
@@ -86,17 +93,20 @@ export default function OpengraphImage() {
               display: "flex",
             }}
           >
-            Sealed files, disputed calls and the paperwork that went missing — the World
-            Cup&apos;s unresolved questions, open for public scrutiny.
+            Indictments, buried reports and the warnings FIFA had in writing beforehand —
+            every record cited and graded by the strength of the evidence.
           </div>
         </div>
 
-        {/* Footer stats */}
+        {/* Footer stats — derived from the data, never hardcoded. These were
+            stale ("23 records", "1930–2026") while the archive actually held
+            20 records from 1921, which is exactly the sort of error that
+            undermines a card claiming every claim is sourced. */}
         <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
           {[
-            ["23", "RECORDS"],
-            ["1930–2026", "SPAN"],
-            ["SOURCED", "EVERY CLAIM"],
+            [String(RECORD_COUNT), "RECORDS"],
+            [`${FIRST_YEAR}–${LAST_YEAR}`, "SPAN"],
+            [`${DOCUMENT_COUNT} PRIMARY DOCS`, "QUOTED VERBATIM"],
           ].map(([value, label]) => (
             <div key={label} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ fontSize: 34, fontWeight: 800, color: "#f7f7f8", display: "flex" }}>
