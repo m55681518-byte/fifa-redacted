@@ -424,7 +424,7 @@ export const additionalDossiers: SourceDossier[] = [
       "FIFA's hosting requirements mandated venue standards and tax exemptions while the public cost and the empty stadiums fell entirely on the host.",
     tags: ["brazil", "stadiums", "public-spending", "protests"],
     credibility: 5,
-    evidence: "COURT",
+    evidence: "OFFICIAL",
     people: ["FIFA", "Brazil"],
     classification: "DOCUMENTED",
     description:

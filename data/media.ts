@@ -135,7 +135,9 @@ export const ANTHEMS: Record<number, Anthem> = {
  * material — and are never framed as leaked or intercepted. The dossier text is
  * fiction; this footage is not, and the UI keeps that boundary explicit.
  *
- * Keyed by dossier id.
+ * Keyed by dossier id. An entry whose key matches no dossier silently never
+ * renders, so tools/mediaaudit.mjs fails the build on orphans — a 1966
+ * highlights entry sat dead in this file until that check was added.
  */
 export const FOOTAGE: Record<string, Footage> = {
   "SEC-2015-001": {
@@ -167,12 +169,6 @@ export const FOOTAGE: Record<string, Footage> = {
     title: "The Battle of Santiago — the World Cup's most violent match",
     channel: "Full Time Football",
     kind: "documentary",
-  },
-  "SEC-1966-001": {
-    youtubeId: "v55OBRpuPuw",
-    title: "England 4-2 West Germany — 1966 World Cup final highlights",
-    channel: "ClassicEngland",
-    kind: "highlights",
   },
   "SEC-1982-017": {
     youtubeId: "M0mHp3iyWGg",

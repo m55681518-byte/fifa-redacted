@@ -9,6 +9,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Image as ImageIcon,
   Link2,
   Play,
   Send,
@@ -18,6 +20,8 @@ import {
 import { EVIDENCE_NOTE, type Comment, type SecretDossier } from "../../data/secrets";
 import { getDossierImage } from "../../data/images";
 import { getFootage } from "../../data/media";
+import { EXHIBIT_KIND_LABEL, getExhibit } from "../../data/documents";
+import { ExhibitViewer } from "./exhibit-viewer";
 import { Flag } from "./flag";
 import { useBookmark, useComments, useVote } from "@/lib/store";
 import { formatTimestamp, generateId } from "@/lib/utils";
@@ -74,10 +78,12 @@ function DossierModalContent({
 
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [showExhibit, setShowExhibit] = useState(false);
   const [copied, setCopied] = useState(false);
   const [author, setAuthor] = useState("");
   const [text, setText] = useState("");
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const scrollTopRef = useRef<HTMLDivElement>(null);
 
   const cls = classificationStyle(dossier.classification);
   const votes = dossier.upvotes + bonus;
@@ -89,6 +95,19 @@ function DossierModalContent({
   // Genuine documentary/broadcast footage of the real event, where it exists.
   // Presented as journalism, never dressed up as leaked material.
   const footage = getFootage(dossier.id);
+
+  // Where no honest footage exists, the record is backed by paper instead —
+  // a plea transcript, a prosecutor's order, FIFA's own evaluation. Those
+  // records are not evidence-poor; they are the best-evidenced ones here.
+  const exhibit = getExhibit(dossier.id);
+
+  // Opening a different record must not inherit the previous one's media
+  // state, or you land on an exhibit belonging to another dossier.
+  useEffect(() => {
+    setShowExhibit(false);
+    setShowVideo(false);
+    setGalleryIdx(0);
+  }, [dossier.id]);
 
   // Arrow keys page the gallery while the modal is open.
   useEffect(() => {
@@ -180,9 +199,30 @@ function DossierModalContent({
 
           {/* Scroll body */}
           <div className="min-h-0 flex-1 overflow-y-auto">
+            <div ref={scrollTopRef} />
             {/* Media */}
-            <div className="media-vignette relative aspect-[16/8] w-full bg-surface-2">
-              {showVideo ? (
+            <div
+              // The vignette lays a 95%-opaque gradient over the lower half of
+              // the pane. That flatters a photograph and swallows a document,
+              // so it is only applied when a photograph is showing.
+              className={`relative w-full bg-surface-2 ${
+                showExhibit && exhibit
+                  ? "h-[min(62vh,30rem)]"
+                  : "media-vignette aspect-[16/8]"
+              }`}
+            >
+              {showExhibit && exhibit ? (
+                <>
+                  <ExhibitViewer exhibit={exhibit} />
+                  <button
+                    onClick={() => setShowExhibit(false)}
+                    className="glass-panel absolute right-3 top-3 z-20 flex items-center gap-2 px-3 py-2 text-[11px] text-ink-high transition-colors hover:text-redline"
+                  >
+                    <ImageIcon className="h-3 w-3" />
+                    <span className="font-mono-custom tracking-wider">BACK TO PHOTO</span>
+                  </button>
+                </>
+              ) : showVideo ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${footage?.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
                   title={footage?.title ?? `${dossier.year} archive footage`}
@@ -236,6 +276,8 @@ function DossierModalContent({
                     </>
                   )}
 
+                  {/* Video where honest footage exists; the document where it
+                      doesn't. Never both invented, never nothing. */}
                   {footage && (
                     <button
                       onClick={() => setShowVideo(true)}
@@ -243,6 +285,16 @@ function DossierModalContent({
                     >
                       <Play className="h-3 w-3" />
                       <span className="font-mono-custom tracking-wider">WATCH FOOTAGE</span>
+                    </button>
+                  )}
+
+                  {!footage && exhibit && (
+                    <button
+                      onClick={() => setShowExhibit(true)}
+                      className="glass-panel absolute bottom-3 right-3 z-10 flex items-center gap-2 px-3 py-2 text-[11px] text-ink-high transition-colors hover:text-amber"
+                    >
+                      <FileText className="h-3 w-3" />
+                      <span className="font-mono-custom tracking-wider">READ THE DOCUMENT</span>
                     </button>
                   )}
 
@@ -409,6 +461,27 @@ function DossierModalContent({
                     {footage.kind.toUpperCase()} · {footage.channel} · via YouTube
                   </p>
                 </div>
+              )}
+
+              {/* Primary document — the substitute for footage that does not
+                  honestly exist. Same visual weight as the footage block. */}
+              {!footage && exhibit && (
+                <button
+                  onClick={() => {
+                    setShowExhibit(true);
+                    scrollTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="mt-6 block w-full border border-amber/25 bg-amber/[0.04] px-4 py-3 text-left transition-colors hover:border-amber/50"
+                >
+                  <p className="font-mono-custom text-[9px] tracking-[0.22em] text-amber">
+                    NO FOOTAGE EXISTS — READ THE DOCUMENT INSTEAD
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink-high">{exhibit.title}</p>
+                  <p className="font-mono-custom mt-1 text-[10px] text-ink-faint">
+                    {EXHIBIT_KIND_LABEL[exhibit.kind].toUpperCase()} · {exhibit.issuer} ·{" "}
+                    {exhibit.dated}
+                  </p>
+                </button>
               )}
 
               {/* Anthem — only rendered when a verified recording exists */}

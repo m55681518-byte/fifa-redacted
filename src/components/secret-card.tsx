@@ -2,9 +2,11 @@
 
 import NextImage from "next/image";
 import { motion } from "framer-motion";
-import { Bookmark, MessageSquare, Play, ThumbsUp } from "lucide-react";
+import { Bookmark, FileText, MessageSquare, Play, ThumbsUp } from "lucide-react";
 import type { SecretDossier } from "../../data/secrets";
 import { getDossierImage } from "../../data/images";
+import { getFootage } from "../../data/media";
+import { getExhibit } from "../../data/documents";
 import { Flag } from "./flag";
 import { useBookmark, useStore, useVote } from "@/lib/store";
 import {
@@ -34,6 +36,8 @@ export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardP
   // one exists, otherwise a period-styled illustration. Both ship with the app,
   // so nothing here can 404 the way remote stock URLs did.
   const image = getDossierImage(dossier.id);
+  const footage = getFootage(dossier.id);
+  const exhibit = getExhibit(dossier.id);
   const poster = image?.src ?? dossier.thumbnailUrl;
 
   return (
@@ -87,15 +91,36 @@ export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardP
           </span>
         )}
 
-        {/* Evidence tier — the strength of the proof, visible at a glance */}
-        {dossier.evidence && (
-          <span
-            className="font-mono-custom absolute bottom-3 left-3 z-10 border border-emerald/40 bg-void/85 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-emerald backdrop-blur-sm"
-            title={`Evidence: ${dossier.evidence}`}
-          >
-            {dossier.evidence}
-          </span>
-        )}
+        {/* Evidence tier — the strength of the proof, visible at a glance —
+            and what medium backs it: film where honest film exists, the
+            primary document where it doesn't. */}
+        <span className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5">
+          {dossier.evidence && (
+            <span
+              className="font-mono-custom border border-emerald/40 bg-void/85 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-emerald backdrop-blur-sm"
+              title={`Evidence: ${dossier.evidence}`}
+            >
+              {dossier.evidence}
+            </span>
+          )}
+          {footage ? (
+            <span
+              className="font-mono-custom flex items-center gap-1 border border-cyan/40 bg-void/85 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-cyan backdrop-blur-sm"
+              title={`Archive footage: ${footage.title}`}
+            >
+              <Play className="h-2 w-2" />
+              FILM
+            </span>
+          ) : exhibit ? (
+            <span
+              className="font-mono-custom flex items-center gap-1 border border-amber/40 bg-void/85 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-amber backdrop-blur-sm"
+              title={`Primary document: ${exhibit.title}`}
+            >
+              <FileText className="h-2 w-2" />
+              DOC
+            </span>
+          ) : null}
+        </span>
 
         {/* Credibility meter */}
         {dossier.credibility != null && (

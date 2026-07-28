@@ -239,7 +239,7 @@ export const secretDossiers: SourceDossier[] = [
       "FIFA's evaluation ranked Qatar the weakest bid, then the executive committee chose it and spent five years reversing the consequences.",
     tags: ["qatar", "bidding", "heat", "technical-report"],
     credibility: 5,
-    evidence: "COURT",
+    evidence: "OFFICIAL",
     people: ["FIFA", "Sepp Blatter", "Qatar"],
     classification: "DOCUMENTED",
     description:
