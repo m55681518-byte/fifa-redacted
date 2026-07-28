@@ -36,6 +36,7 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   const [volume, setVolume] = useState(0.6);
   const [isMuted, setIsMuted] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [blockedId, setBlockedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef(0.6);
   const isMutedRef = useRef(false);
@@ -73,8 +74,8 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
 
     try {
       ytPlayerInstance = new YT.Player(div.id, {
-        height: "0",
-        width: "0",
+        height: "200",
+        width: "200",
         videoId: youtubeId,
         playerVars: {
           autoplay: 1,
@@ -107,9 +108,20 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
               }
             }
           },
-          onError: () => {
+          onError: (e) => {
+            // 101/150 mean the owner disabled embedding; 100 means the video is
+            // gone. Nothing is recoverable, so surface it and move on rather
+            // than sitting silently on a dead track.
             setIsPlaying(false);
             setBuffering(false);
+            setBlockedId(youtubeId);
+            const idx = tracks.findIndex((t) => t.youtubeId === youtubeId);
+            if (idx >= 0 && idx < tracks.length - 1) {
+              setTimeout(() => onSelectTrack(tracks[idx + 1]), 1200);
+            }
+            if (process.env.NODE_ENV !== "production") {
+              console.warn(`[audio] YouTube embed error ${e?.data} for ${youtubeId}`);
+            }
           },
         },
       });
@@ -130,13 +142,24 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
     initPlayer(track.youtubeId);
   }, [track, initPlayer]);
 
+  // Derived during render: the warning only applies while the failed track is
+  // still the selected one, so switching tracks clears it without an effect.
+  const blocked = !!track && blockedId === track.youtubeId;
+
   // With no track loaded there is nothing to play or buffer. Deriving these
   // during render avoids a cascading setState inside the effect above.
   const playing = track ? isPlaying : false;
   const isBuffering = track ? buffering : false;
 
   const togglePlay = () => {
-    if (!ytPlayerInstance || !playerReadyRef.current || !track) return;
+    // Nothing loaded yet: this click is the user's gesture, so start the first
+    // available anthem rather than doing nothing. Previously the bar's play
+    // button was inert on landing, which read as "the music is broken".
+    if (!track) {
+      if (tracks.length > 0) onSelectTrack(tracks[0]);
+      return;
+    }
+    if (!ytPlayerInstance || !playerReadyRef.current) return;
     if (playing) {
       try { ytPlayerInstance.pauseVideo(); } catch {}
     } else {
@@ -175,7 +198,12 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
   };
 
   const skipTrack = (dir: 1 | -1) => {
-    if (!track) return;
+    if (tracks.length === 0) return;
+    // Skipping with nothing loaded enters the playlist at either end.
+    if (!track) {
+      onSelectTrack(dir === 1 ? tracks[0] : tracks[tracks.length - 1]);
+      return;
+    }
     const idx = tracks.findIndex((t) => t.youtubeId === track.youtubeId);
     const next = (idx + dir + tracks.length) % tracks.length;
     onSelectTrack(tracks[next]);
@@ -185,52 +213,67 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
 
   return (
     <>
+      {/*
+        Audio-only YouTube host. Must stay in the render tree — a display:none
+        or visibility:hidden ancestor causes the IFrame API to silently refuse
+        playback. Clipped to 1px and pushed behind the page instead, and kept
+        outside the collapsible bar so dismissing the UI doesn't kill the audio.
+      */}
+      <div
+        ref={containerRef}
+        aria-hidden
+        className="pointer-events-none fixed bottom-0 left-0 -z-10 h-px w-px overflow-hidden opacity-[0.01]"
+      />
+
       <AnimatePresence>
         {!dismissed && (
           <motion.div
             initial={{ y: 60 }}
             animate={{ y: 0 }}
             exit={{ y: 60 }}
-            className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md"
+            className="glass-strong fixed inset-x-0 bottom-0 z-[90] border-t border-line"
           >
-            <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3.5 sm:gap-6 sm:px-8 lg:px-10">
 
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className={`flex items-end gap-px h-5 ${!playing ? "eq-idle" : ""}`}>
+              <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                <div className={`hidden h-5 items-end gap-px sm:flex ${!playing ? "eq-idle" : ""}`}>
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="eq-bar" />
                   ))}
                 </div>
-                <div className="min-w-0 ml-2">
-                  <p className="truncate font-display text-xs font-bold text-zinc-100">
-                    {track?.title || "NO SIGNAL"}
+                <div className="min-w-0">
+                  <p className="font-display truncate text-xs leading-snug text-ink-max">
+                    {track?.title || "PLAY TOURNAMENT ANTHEM"}
                   </p>
-                  <p className="truncate font-mono-custom text-[9px] text-zinc-500">
-                    {track?.artist || "—"}
+                  <p className="font-mono-custom mt-0.5 truncate text-[10px] leading-snug text-ink-mid">
+                    {blocked
+                      ? "UNAVAILABLE — SKIPPING"
+                      : track?.artist || `${tracks.length} official anthems`}
                   </p>
                 </div>
               </div>
 
-              <div className="hidden items-center gap-2 font-mono-custom text-[9px] text-zinc-500 sm:flex">
+              <div className="font-mono-custom hidden shrink-0 items-center gap-2 text-[10px] text-ink-low lg:flex">
                 <Globe className="h-3 w-3" />
                 <span>{track?.hostNation} · {track?.year}</span>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-2.5">
                 <button
                   onClick={() => skipTrack(-1)}
-                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
-                  title="Previous"
+                  className="p-2 text-ink-mid transition-colors hover:bg-surface-2 hover:text-ink-max"
+                  title="Previous" aria-label="Previous track"
                 >
                   <SkipBack className="h-3.5 w-3.5" />
                 </button>
 
                 <button
                   onClick={togglePlay}
-                  className="flex h-8 w-8 items-center justify-center rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 text-[#ff2e2e] transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
+                  aria-label={playing ? "Pause" : "Play"}
+                  className="btn-primary flex h-10 w-10 items-center justify-center"
                 >
                   {isBuffering ? (
-                    <span className="h-3 w-3 animate-pulse rounded-none bg-[#ff2e2e]" />
+                    <span className="h-3 w-3 animate-pulse rounded-full bg-white/80" />
                   ) : playing ? (
                     <Pause className="h-3.5 w-3.5" />
                   ) : (
@@ -240,17 +283,18 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
 
                 <button
                   onClick={() => skipTrack(1)}
-                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
-                  title="Next"
+                  className="p-2 text-ink-mid transition-colors hover:bg-surface-2 hover:text-ink-max"
+                  title="Next" aria-label="Next track"
                 >
                   <SkipForward className="h-3.5 w-3.5" />
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2.5">
                 <button
                   onClick={toggleMute}
-                  className="rounded-none p-1.5 text-zinc-400 transition-colors hover:text-zinc-100 hover:bg-zinc-800"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  className="p-2 text-ink-mid transition-colors hover:bg-surface-2 hover:text-ink-max"
                 >
                   {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
                 </button>
@@ -262,19 +306,19 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
                   step="0.05"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="h-1 w-12 cursor-pointer appearance-none rounded-none bg-zinc-800 accent-[#ff2e2e] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-none [&::-webkit-slider-thumb]:bg-[#ff2e2e]"
+                  aria-label="Volume"
+                  className="h-1 w-14 cursor-pointer appearance-none bg-surface-3 accent-redline [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-redline"
                 />
 
                 <button
                   onClick={() => setDismissed(true)}
-                  className="rounded-none p-1.5 text-zinc-500 transition-colors hover:text-zinc-300 hover:bg-zinc-800"
-                  title="Dismiss"
+                  className="p-2 text-ink-low transition-colors hover:bg-surface-2 hover:text-ink-high"
+                  title="Dismiss" aria-label="Hide audio player"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
             </div>
-            <div ref={containerRef} className="hidden" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -286,8 +330,8 @@ export function AudioBar({ track, tracks, onSelectTrack }: AudioBarProps) {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setDismissed(false)}
-            className="fixed bottom-4 right-4 z-50 flex h-10 w-10 items-center justify-center border border-[#ff2e2e]/30 bg-zinc-950/90 text-[#ff2e2e] shadow-lg backdrop-blur-md transition-all hover:bg-[#ff2e2e]/20 active:scale-90"
-            title="Open audio player"
+            className="glass-strong elev-2 fixed bottom-5 right-5 z-[90] flex h-11 w-11 items-center justify-center border border-redline/40 text-redline transition-all hover:bg-redline/15 active:scale-95"
+            title="Open audio player" aria-label="Open audio player"
           >
             <Disc className="h-4 w-4" />
           </motion.button>

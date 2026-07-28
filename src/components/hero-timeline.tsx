@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { worldCupYears, secretDossiers } from "../../data/secrets";
+import { useEffect, useMemo, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Play, Radio } from "lucide-react";
+import { allDossiers, worldCupYears } from "../../data/secrets";
+import { getAnthem } from "../../data/media";
+import { getEra, getHostCode } from "@/lib/dossier-utils";
 
 interface HeroTimelineProps {
   selectedYear: number | null;
@@ -10,201 +13,219 @@ interface HeroTimelineProps {
   onPlayAudio: (year: number) => void;
 }
 
-const clusterLabels: Record<string, string> = {
-  "1930-1962": "BAND 1 // EARLY",
-  "1966-1994": "BAND 2 // GOLDEN",
-  "1998-2026": "BAND 3 // MODERN",
-};
-
-function getClusterKey(year: number): string {
-  if (year <= 1962) return "1930-1962";
-  if (year <= 1994) return "1966-1994";
-  return "1998-2026";
-}
-
-function getHostCode(year: number): string {
-  const d = secretDossiers.find((s) => s.year === year);
-  if (!d) return "";
-  const map: Record<string, string> = {
-    England: "ENG",
-    Argentina: "ARG",
-    France: "FRA",
-    "South Korea": "KOR",
-    Germany: "GER",
-    "South Africa": "RSA",
-    Brazil: "BRA",
-    Qatar: "QAT",
-    "United States": "USA",
-    Uruguay: "URU",
-  };
-  return map[d.hostNation] || d.hostNation.slice(0, 3).toUpperCase();
-}
+const NODE_W = 46;
 
 export function HeroTimeline({ selectedYear, onSelectYear, onPlayAudio }: HeroTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const dossiersByYear = useMemo(() => {
-    const map: Record<number, boolean> = {};
-    secretDossiers.forEach((d) => { map[d.year] = true; });
+  const byYear = useMemo(() => {
+    const map: Record<number, { count: number; nation: string }> = {};
+    allDossiers.forEach((d) => {
+      map[d.year] = { count: (map[d.year]?.count ?? 0) + 1, nation: d.hostNation };
+    });
     return map;
   }, []);
 
+  /**
+   * Axis years: every World Cup, plus any year that carries a record. Several
+   * of the institutional cases fall outside tournament years and would
+   * otherwise be unreachable from the timeline.
+   */
+  const axisYears = useMemo(
+    () => Array.from(new Set([...worldCupYears, ...allDossiers.map((d) => d.year)])).sort((a, b) => a - b),
+    []
+  );
+
+  /** Years with a record but no tournament — rendered as off-cycle markers. */
+  const offCycle = useMemo(
+    () => new Set(axisYears.filter((y) => !worldCupYears.includes(y))),
+    [axisYears]
+  );
+
   useEffect(() => {
-    if (selectedYear && scrollRef.current) {
-      const el = scrollRef.current.querySelector(`[data-year="${selectedYear}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }
-    }
+    if (!selectedYear || !scrollRef.current) return;
+    scrollRef.current
+      .querySelector(`[data-year="${selectedYear}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [selectedYear]);
 
-  return (
-    <section className="relative overflow-hidden border-b border-zinc-800">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#ff2e2e]/5 via-transparent to-transparent" />
+  const active = selectedYear ? byYear[selectedYear] : null;
 
-      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-4 text-center">
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-mono-custom text-[9px] tracking-[0.3em] text-zinc-500"
-          >
-            [ FREQUENCY BAND SELECTOR ]
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-display mt-1 text-lg font-bold text-zinc-100 sm:text-xl"
-          >
-            WORLD CUP ARCHIVE
-          </motion.h2>
+  return (
+    <section
+      id="timeline"
+      className="relative overflow-hidden border-y border-line bg-surface-0/60"
+    >
+      <div
+        className="aurora left-1/2 top-0 h-64 w-[600px] -translate-x-1/2"
+        style={{ background: "radial-gradient(circle, rgba(255,59,48,0.08), transparent 70%)" }}
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <p className="font-mono-custom flex items-center gap-2 text-[10px] tracking-[0.24em] text-ink-low">
+              <Radio className="h-3 w-3 text-ink-low" />
+              FREQUENCY BAND SELECTOR
+            </p>
+            <h2 className="font-display mt-1.5 text-base text-ink-max sm:text-lg">
+              TOURNAMENT TIMELINE
+            </h2>
+          </div>
+
+          {selectedYear && (
+            <button
+              onClick={() => onSelectYear(null)}
+              className="font-mono-custom flex-shrink-0 text-[10px] tracking-wider text-ink-faint transition-colors hover:text-redline"
+            >
+              RESET SCAN
+            </button>
+          )}
         </div>
 
+        {/* Tuner */}
         <div
           ref={scrollRef}
-          className="relative flex gap-0 overflow-x-auto pb-5"
-          style={{ scrollbarWidth: "none" }}
+          className="no-scrollbar relative overflow-x-auto pb-2"
+          role="group"
+          aria-label="Filter records by tournament year"
         >
-          <div className="flex items-end gap-0 mx-auto">
-            {worldCupYears.map((year, idx) => {
-              const hasDossier = !!dossiersByYear[year];
+          <div className="mx-auto flex w-max items-end">
+            {axisYears.map((year, idx) => {
+              const data = byYear[year];
+              const anthem = getAnthem(year);
+              // Interactive if it holds a record OR has an anthem to play.
+              const isActive = !!data || !!anthem;
+              const hasData = !!data;
               const isSelected = selectedYear === year;
-              const cluster = getClusterKey(year);
-              const firstInCluster =
-                idx === 0 || getClusterKey(worldCupYears[idx - 1]) !== cluster;
-              const hostCode = getHostCode(year);
+              const era = getEra(year);
+              const firstOfEra = idx === 0 || getEra(axisYears[idx - 1]).key !== era.key;
 
               return (
-                <div key={year} className="flex flex-col items-center" style={{ width: 36 }}>
-                  {firstInCluster && (
-                    <span className="font-mono-custom mb-2 text-[7px] tracking-[0.2em] text-zinc-600">
-                      {clusterLabels[cluster]}
+                <div key={year} className="flex flex-col items-center" style={{ width: NODE_W }}>
+                  {firstOfEra && (
+                    <span className="font-mono-custom mb-2 whitespace-nowrap text-[8px] tracking-[0.2em] text-ink-low">
+                      {era.label}
                     </span>
                   )}
+                  {!firstOfEra && <span className="mb-2 h-[9px]" aria-hidden />}
 
-                  <div className="relative flex flex-col items-center">
-                    <motion.button
-                      data-year={year}
-                      onClick={() => onSelectYear(isSelected ? null : year)}
-                      className={`relative flex flex-col items-center transition-all ${
-                        hasDossier ? "cursor-pointer" : "cursor-default"
+                  <button
+                    data-year={year}
+                    onClick={() => onSelectYear(isSelected ? null : year)}
+                    disabled={!isActive}
+                    aria-pressed={isSelected}
+                    aria-label={[
+                      String(year),
+                      hasData ? `${data.nation}, ${data.count} record${data.count !== 1 ? "s" : ""}` : "no records",
+                      anthem ? `plays ${anthem.title}` : "no anthem",
+                    ].join(" — ")}
+                    title={anthem ? `Play "${anthem.title}" — ${anthem.artist}` : undefined}
+                    className={`group flex flex-col items-center transition-transform ${
+                      isActive ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"
+                    }`}
+                  >
+                    <span
+                      className={`font-mono-custom text-[11px] transition-colors ${
+                        isSelected
+                          ? "font-bold text-amber"
+                          : hasData
+                            ? "text-ink-high group-hover:text-redline"
+                            : anthem
+                              ? "text-ink-mid group-hover:text-redline"
+                              : "text-ink-low/55"
                       }`}
-                      whileHover={hasDossier ? { scale: 1.1 } : {}}
-                      whileTap={hasDossier ? { scale: 0.95 } : {}}
                     >
-                      <span
-                        className={`font-mono-custom text-[10px] transition-colors ${
-                          isSelected
-                            ? "text-tactical-amber"
-                            : hasDossier
-                              ? "text-zinc-300 hover:text-[#ff2e2e]"
-                              : "text-zinc-700"
-                        }`}
-                      >
-                        {year}
-                      </span>
+                      {year}
+                    </span>
 
-                      {hasDossier && (
-                        <span className="font-mono-custom mt-0.5 text-[6px] text-zinc-600">
-                          {hostCode}
-                        </span>
-                      )}
+                    <span
+                      className={`font-mono-custom mt-0.5 h-3 text-[7px] tracking-wider ${
+                        isSelected ? "text-amber/80" : "text-ink-low"
+                      }`}
+                    >
+                      {hasData ? (offCycle.has(year) ? "FIFA" : getHostCode(data.nation)) : anthem ? "♪" : ""}
+                    </span>
 
-                      <div className="relative mt-1 flex flex-col items-center">
-                        <div
-                          className={`w-[2px] transition-all ${
-                            isSelected
-                              ? "h-8 bg-tactical-amber tactical-needle"
-                              : hasDossier
-                                ? "h-5 bg-[#ff2e2e]/40"
-                                : "h-3 bg-zinc-800"
-                          }`}
-                        />
-                        <div
-                          className={`mt-0.5 h-1 w-1 rounded-full transition-all ${
-                            isSelected
-                              ? "bg-tactical-amber shadow-[0_0_6px_rgba(245,158,11,0.6)]"
-                              : hasDossier
-                                ? "bg-[#ff2e2e]/60"
-                                : "bg-zinc-800"
-                          }`}
-                        />
-                      </div>
-                    </motion.button>
-                  </div>
+                    <span
+                      className={`mt-1.5 w-[2px] transition-all duration-300 ${
+                        isSelected
+                          ? "tactical-needle h-9 bg-amber"
+                          : hasData
+                            ? "h-5 bg-redline/45 group-hover:h-7 group-hover:bg-redline"
+                            : anthem
+                              ? "h-3.5 bg-redline/25 group-hover:h-5 group-hover:bg-redline/60"
+                              : "h-2.5 bg-line-strong"
+                      }`}
+                    />
+
+                    <span
+                      className={`mt-1 h-1.5 w-1.5 rounded-full transition-all ${
+                        isSelected
+                          ? "bg-amber shadow-[0_0_8px_rgba(245,165,36,0.8)]"
+                          : hasData
+                            ? "bg-redline/60 group-hover:bg-redline"
+                            : "bg-line-strong"
+                      }`}
+                    />
+                  </button>
                 </div>
               );
             })}
           </div>
-        </div>
 
-        <div className="relative mt-1 h-4">
-          <div className="absolute left-0 right-0 top-1/2 h-[1px] -translate-y-1/2 bg-zinc-800" />
-          <div className="mx-auto flex w-fit gap-0">
-            {worldCupYears.map((year) => (
-              <div key={year} className="flex justify-center" style={{ width: 36 }}>
-                <div
-                  className={`freq-tick ${
-                    dossiersByYear[year] || selectedYear === year ? "active" : ""
-                  }`}
-                />
-              </div>
-            ))}
+          {/* Tick rail */}
+          <div className="relative mt-2 h-3">
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line" />
+            <div className="mx-auto flex w-max">
+              {axisYears.map((year) => (
+                <span key={year} className="flex justify-center" style={{ width: NODE_W }}>
+                  <span
+                    className={`freq-tick ${byYear[year] ? "has-data" : ""} ${
+                      selectedYear === year ? "active" : ""
+                    }`}
+                    style={{ height: selectedYear === year ? 12 : byYear[year] ? 8 : 5 }}
+                  />
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 text-center">
+        {/* Readout */}
+        <div className="mt-5 flex min-h-[32px] items-center justify-center">
           <AnimatePresence mode="wait">
-            {selectedYear ? (
+            {selectedYear && active ? (
               <motion.div
-                key="selected"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center gap-3"
+                key={selectedYear}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.22 }}
+                className="flex flex-wrap items-center justify-center gap-2.5"
               >
-                <span className="font-mono-custom text-[9px] text-tactical-amber">
-                  LOCKED: {selectedYear}
+                <span className="font-mono-custom border border-amber/50 bg-amber/10 px-2.5 py-1 text-[10px] tracking-wider text-amber">
+                  LOCKED · {selectedYear}
                 </span>
-                <span className="text-zinc-700">|</span>
-                <span className="font-mono-custom text-[9px] text-zinc-500">
-                  {getHostCode(selectedYear)}{" // "}{worldCupYears.indexOf(selectedYear) + 1} OF {worldCupYears.length}
+                <span className="font-mono-custom text-[10px] tracking-wider text-ink-low">
+                  {active.nation.toUpperCase()} — {active.count} RECORD
+                  {active.count !== 1 ? "S" : ""}
                 </span>
                 <button
                   onClick={() => onPlayAudio(selectedYear)}
-                  className="flex items-center gap-1 rounded-none border border-[#ff2e2e]/30 px-2 py-0.5 text-[9px] text-[#ff2e2e] transition-colors hover:bg-[#ff2e2e]/10"
+                  className="btn-ghost flex items-center gap-1.5 px-2.5 py-1 text-[10px]"
                 >
-                  ▶ PLAY ANTHEM
+                  <Play className="h-2.5 w-2.5" />
+                  <span className="font-mono-custom tracking-wider">ANTHEM</span>
                 </button>
               </motion.div>
             ) : (
               <motion.p
-                key="all"
+                key="idle"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="font-mono-custom text-[9px] text-zinc-600"
+                className="font-mono-custom text-[10px] tracking-[0.18em] text-ink-low"
               >
                 ALL BANDS ACTIVE — SELECT A FREQUENCY TO FILTER
               </motion.p>

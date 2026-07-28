@@ -1,8 +1,12 @@
 name = "fifa-redacted"
-account_id = "66a463623b9929ea2e1eb3a700291e08"
 main = ".open-next/worker.js"
 compatibility_date = "2026-07-22"
 compatibility_flags = ["nodejs_compat"]
+
+# account_id is deliberately NOT committed. Supply it at deploy time via the
+# CLOUDFLARE_ACCOUNT_ID environment variable, or run `wrangler login`.
+# It is an account identifier rather than a credential, but there is no reason
+# for it to sit in a public repository.
 
 [assets]
 directory = ".open-next/assets"

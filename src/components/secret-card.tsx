@@ -1,277 +1,215 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
+import { Bookmark, MessageSquare, Play, ThumbsUp } from "lucide-react";
+import type { SecretDossier } from "../../data/secrets";
+import { getDossierImage } from "../../data/images";
+import { Flag } from "./flag";
+import { useBookmark, useStore, useVote } from "@/lib/store";
 import {
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-  Eye,
-  ThumbsUp,
-} from "lucide-react";
-import type { SecretDossier, Comment } from "../../data/secrets";
-import { CommentSection } from "./comment-section";
-
-/**
- * Subscribes to the `upvoted_<id>` localStorage flag as an external store.
- * `useSyncExternalStore` reads the value during render (no cascading setState
- * in an effect) and returns `false` on the server so SSR markup stays stable.
- */
-function useUpvotedFlag(dossierId: string): [boolean, () => void] {
-  const key = `upvoted_${dossierId}`;
-
-  const subscribe = useCallback((onStoreChange: () => void) => {
-    window.addEventListener("storage", onStoreChange);
-    window.addEventListener("upvote-changed", onStoreChange);
-    return () => {
-      window.removeEventListener("storage", onStoreChange);
-      window.removeEventListener("upvote-changed", onStoreChange);
-    };
-  }, []);
-
-  const getSnapshot = useCallback(() => {
-    try {
-      return localStorage.getItem(key) === "true";
-    } catch {
-      return false;
-    }
-  }, [key]);
-
-  const getServerSnapshot = useCallback(() => false, []);
-
-  const upvoted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  const markUpvoted = useCallback(() => {
-    try {
-      localStorage.setItem(key, "true");
-    } catch {
-      /* storage unavailable (private mode / quota) — keep the optimistic UI */
-    }
-    window.dispatchEvent(new Event("upvote-changed"));
-  }, [key]);
-
-  return [upvoted, markUpvoted];
-}
+  classificationStyle,
+  formatCount,
+  getHostCode,
+} from "@/lib/dossier-utils";
 
 interface SecretCardProps {
   dossier: SecretDossier;
-  onUpvote: (id: string) => void;
-  onAddComment: (dossierId: string, comment: Comment) => void;
+  index: number;
+  onOpen: (d: SecretDossier) => void;
+  onPlayAnthem: (d: SecretDossier) => void;
 }
 
-export function SecretCard({ dossier, onUpvote, onAddComment }: SecretCardProps) {
-  const [localUpvoted, markUpvoted] = useUpvotedFlag(dossier.id);
-  const [extraVotes, setExtraVotes] = useState(0);
-  const [galleryIdx, setGalleryIdx] = useState(0);
-  const [videoError, setVideoError] = useState(false);
+export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardProps) {
+  const { hasVoted, bonus, toggle } = useVote(dossier.id);
+  const { bookmarked, toggle: toggleBookmark } = useBookmark(dossier.id);
+  const store = useStore();
 
-  const localCount = dossier.upvotes + extraVotes;
+  const cls = classificationStyle(dossier.classification);
+  const votes = dossier.upvotes + bonus;
+  const commentCount = dossier.comments.length + (store.comments[dossier.id]?.length ?? 0);
 
-  const handleUpvote = () => {
-    if (localUpvoted) return;
-    setExtraVotes(1);
-    markUpvoted();
-    onUpvote(dossier.id);
-  };
-
-  const classificationColor =
-    dossier.classification === "TOP SECRET"
-      ? "text-[#ff2e2e] border-[#ff2e2e]"
-      : dossier.classification === "CONFIDENTIAL"
-        ? "text-tactical-amber border-tactical-amber"
-        : "text-zinc-400 border-zinc-500";
-
-  const hasGallery = dossier.gallery && dossier.gallery.length > 0;
-  const currentMedia =
-    dossier.mediaType === "youtube"
-      ? dossier.mediaUrl
-      : hasGallery
-        ? dossier.gallery[galleryIdx]
-        : dossier.thumbnailUrl;
-
-  const now = new Date();
-  const timecode = now.toTimeString().slice(0, 8);
+  // Prefer a still frame over an embedded player: 23 iframes would wreck LCP.
+  // Verified local imagery: a real archive photograph where a freely licensed
+  // one exists, otherwise a period-styled illustration. Both ship with the app,
+  // so nothing here can 404 the way remote stock URLs did.
+  const image = getDossierImage(dossier.id);
+  const poster = image?.src ?? dossier.thumbnailUrl;
 
   return (
-    <motion.div
+    <motion.article
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="group relative overflow-hidden rounded-none border border-zinc-800 bg-zinc-950/90 transition-all hover:border-zinc-700"
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3), ease: [0.16, 1, 0.3, 1] }}
+      className="dossier-card group flex flex-col"
     >
-      <span className="crosshair-tl crosshair-tl">+</span>
-      <span className="crosshair-tr">+</span>
-      <span className="crosshair-bl">+</span>
-      <span className="crosshair-br">+</span>
+      <span className="crosshair crosshair-tl" aria-hidden />
+      <span className="crosshair crosshair-tr" aria-hidden />
+      <span className="crosshair crosshair-bl" aria-hidden />
+      <span className="crosshair crosshair-br" aria-hidden />
 
-      <div className="absolute right-3 top-3 z-20">
+      {/* Media */}
+      <button
+        onClick={() => onOpen(dossier)}
+        aria-label={`Open dossier: ${dossier.title}`}
+        className="media-vignette relative block h-48 w-full overflow-hidden bg-surface-2 text-left"
+      >
+        <NextImage
+          src={poster}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="archival-photo object-cover group-hover:scale-[1.06]"
+          loading={index < 3 ? "eager" : "lazy"}
+          priority={index < 3}
+        />
+
+        {/* Classification stamp */}
         <span
-          className={`classification-stamp inline-block rounded-none border px-2 py-0.5 text-[9px] leading-none ${classificationColor}`}
+          className={`classification-stamp absolute right-3 top-3 z-10 border px-2 py-1 text-[9px] leading-none ${cls.text} ${cls.border} ${cls.bg}`}
         >
-          {dossier.classification === "TOP SECRET"
-            ? "[ TOP SECRET ]"
-            : dossier.classification === "CONFIDENTIAL"
-              ? "[ CONFIDENTIAL ]"
-              : "[ CLASSIFIED ]"}
+          {cls.label}
         </span>
-      </div>
 
-      <div className="relative h-52 overflow-hidden bg-zinc-900 vignette-overlay">
-        {dossier.mediaType === "youtube" && !videoError ? (
-          <div className="relative h-full w-full">
-            <iframe
-              src={`${dossier.mediaUrl}?autoplay=0&rel=0&showinfo=0&modestbranding=1`}
-              className="h-full w-full"
-              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              onError={() => setVideoError(true)}
-            />
-            <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-sm bg-zinc-950/80 px-1.5 py-0.5">
-              <span className="rec-indicator">
-                <span className="rec-dot" />
-                <span className="timecode-overlay">REC</span>
-              </span>
-              <span className="timecode-overlay">{timecode} UTC</span>
-            </div>
-          </div>
-        ) : (
-          <div className="relative h-full w-full">
-            <NextImage
-              src={currentMedia}
-              alt={dossier.title}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="archival-photo object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-            {videoError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80">
-                <div className="flex flex-col items-center gap-1">
-                  <AlertTriangle className="h-5 w-5 text-tactical-amber" />
-                  <span className="font-mono-custom text-[10px] text-zinc-500">SIGNAL LOST</span>
-                </div>
-              </div>
-            )}
-            {hasGallery && dossier.gallery.length > 1 && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setGalleryIdx((p) => (p - 1 + dossier.gallery.length) % dossier.gallery.length);
-                  }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-none bg-zinc-950/70 p-1 text-zinc-300 opacity-0 transition-opacity hover:bg-zinc-900 group-hover:opacity-100"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setGalleryIdx((p) => (p + 1) % dossier.gallery.length);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-none bg-zinc-950/70 p-1 text-zinc-300 opacity-0 transition-opacity hover:bg-zinc-900 group-hover:opacity-100"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-                <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-                  {dossier.gallery.map((_, i) => (
-                    <span
-                      key={i}
-                      className={`h-[2px] rounded-none transition-all ${
-                        i === galleryIdx ? "w-3 bg-[#ff2e2e]" : "w-1 bg-zinc-600"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+        {/* Provenance badge */}
+        {image && (
+          <span
+            className="font-mono-custom absolute left-3 top-3 z-10 border border-line-strong bg-void/85 px-1.5 py-0.5 text-[8px] tracking-[0.14em] text-ink-mid backdrop-blur-sm"
+            title={
+              image.provenance === "archive"
+                ? `Archive photograph — ${image.credit ?? "Wikimedia Commons"}`
+                : "Period-styled illustration, not a photograph"
+            }
+          >
+            {image.provenance === "archive" ? "ARCHIVE PHOTO" : "ILLUSTRATION"}
+          </span>
         )}
 
-        <div className="absolute left-2 bottom-2 flex items-center gap-1.5">
-          <span className="font-mono-custom rounded-none border border-zinc-700 bg-zinc-950/80 px-1.5 py-0.5 text-[9px] text-[#ff2e2e]">
-            {dossier.id}
+        {/* Evidence tier — the strength of the proof, visible at a glance */}
+        {dossier.evidence && (
+          <span
+            className="font-mono-custom absolute bottom-3 left-3 z-10 border border-emerald/40 bg-void/85 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-emerald backdrop-blur-sm"
+            title={`Evidence: ${dossier.evidence}`}
+          >
+            {dossier.evidence}
           </span>
-          <span className="font-mono-custom rounded-none border border-zinc-700 bg-zinc-950/80 px-1.5 py-0.5 text-[9px] text-zinc-400">
+        )}
+
+        {/* Credibility meter */}
+        {dossier.credibility != null && (
+          <span
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-0.5"
+            title={`Substantiation: ${dossier.credibility}/5`}
+          >
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-2.5 w-[3px] ${
+                  i < dossier.credibility! ? "bg-amber" : "bg-line-strong"
+                }`}
+              />
+            ))}
+          </span>
+        )}
+      </button>
+
+      {/* Body */}
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-2.5 flex items-center gap-2 text-[10px] text-ink-faint">
+          <span className="font-mono-custom tracking-[0.14em]">
+            {getHostCode(dossier.hostNation)}
+          </span>
+          <span className="h-2.5 w-px bg-line-strong" />
+          <span className="font-mono-custom tracking-[0.14em]">{dossier.id}</span>
+        </div>
+
+        <h3 className="font-display text-balance text-sm leading-snug text-ink-max transition-colors group-hover:text-redline-soft">
+          <button onClick={() => onOpen(dossier)} className="text-left">
+            {dossier.title}
+          </button>
+        </h3>
+
+        <p className="mt-2.5 line-clamp-3 flex-1 text-xs leading-relaxed text-ink-mid">
+          {dossier.summary ?? dossier.description}
+        </p>
+
+        {/* Host nation — flag + full name, under the description */}
+        <div className="mt-3 flex items-center gap-2 border-t border-line/60 pt-3">
+          <Flag code={dossier.hostFlag} nation={dossier.hostNation} className="h-[1.05em]" />
+          <span className="font-mono-custom text-[10px] tracking-[0.14em] text-ink-mid">
+            {dossier.hostNation.toUpperCase()}
+          </span>
+          <span className="font-mono-custom ml-auto text-[10px] tracking-[0.14em] text-ink-faint">
             {dossier.year}
           </span>
         </div>
-      </div>
 
-      <div className="p-3 sm:p-4">
-        <h3 className="font-display text-sm font-bold leading-tight text-zinc-100">
-          {dossier.title}
-        </h3>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-400 line-clamp-4">
-          {dossier.description}
-        </p>
+        {/* Tags */}
+        {dossier.tags && dossier.tags.length > 0 && (
+          <ul className="mt-3.5 flex flex-wrap gap-1.5">
+            {dossier.tags.slice(0, 3).map((t) => (
+              <li
+                key={t}
+                className="font-mono-custom border border-line-strong bg-surface-2 px-2 py-[3px] text-[10px] tracking-wider text-ink-mid"
+              >
+                <span className="text-ink-faint">#</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500">
-          <span className="text-sm">{getFlag(dossier.hostFlag)}</span>
-          <span className="tracking-wider">{dossier.hostNation.toUpperCase()}</span>
-          <span className="text-zinc-700">|</span>
-          <span className="font-mono-custom">{dossier.year}</span>
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
+        {/* Actions */}
+        <div className="mt-4 flex items-center gap-1.5 border-t border-line pt-3.5">
           <button
-            onClick={handleUpvote}
-            disabled={localUpvoted}
-            className={`flex items-center gap-1.5 rounded-none border px-2.5 py-1 text-xs transition-all ${
-              localUpvoted
-                ? "border-[#ff2e2e]/40 bg-[#ff2e2e]/10 text-[#ff2e2e]"
-                : "border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+            onClick={toggle}
+            aria-pressed={hasVoted}
+            aria-label={hasVoted ? "Remove your vote" : "Upvote this dossier"}
+            className={`chip flex items-center gap-1.5 border px-2.5 py-1.5 text-[11px] ${
+              hasVoted
+                ? "border-redline/50 bg-redline/12 text-redline"
+                : "border-line text-ink-low hover:border-line-strong hover:text-ink-high"
             }`}
           >
-            <ThumbsUp className="h-3 w-3" />
-            <span className="font-mono-custom text-[11px]">{localCount}</span>
+            <ThumbsUp className={`h-3 w-3 ${hasVoted ? "fill-current" : ""}`} />
+            <span className="font-mono-custom">{formatCount(votes)}</span>
           </button>
 
-          {dossier.mediaUrl && dossier.mediaType !== "youtube" && (
-            <a
-              href={dossier.mediaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 rounded-none border border-zinc-700 px-2.5 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
-            >
-              <Eye className="h-3 w-3" />
-              SOURCE
-            </a>
-          )}
+          <button
+            onClick={() => onOpen(dossier)}
+            aria-label={`Read ${commentCount} comments`}
+            className="chip flex items-center gap-1.5 border border-line px-2.5 py-1.5 text-[11px] text-ink-low hover:border-line-strong hover:text-ink-high"
+          >
+            <MessageSquare className="h-3 w-3" />
+            <span className="font-mono-custom">{commentCount}</span>
+          </button>
 
-          {dossier.mediaType === "gallery" && (
-            <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-              <ImageIcon className="h-3 w-3" />
-              {dossier.gallery.length} FRAMES
-            </span>
+          <button
+            onClick={toggleBookmark}
+            aria-pressed={bookmarked}
+            aria-label={bookmarked ? "Remove bookmark" : "Bookmark this dossier"}
+            className={`chip ml-auto flex items-center justify-center border p-1.5 ${
+              bookmarked
+                ? "border-amber/50 bg-amber/12 text-amber"
+                : "border-line text-ink-low hover:border-line-strong hover:text-ink-high"
+            }`}
+          >
+            <Bookmark className={`h-3 w-3 ${bookmarked ? "fill-current" : ""}`} />
+          </button>
+
+          {dossier.anthem && (
+            <button
+              onClick={() => onPlayAnthem(dossier)}
+              aria-label={`Play the ${dossier.year} anthem: ${dossier.anthem.title}`}
+              className="chip flex items-center justify-center border border-line p-1.5 text-ink-low hover:border-redline/50 hover:text-redline"
+            >
+              <Play className="h-3 w-3" />
+            </button>
           )}
         </div>
-
-        <CommentSection
-          dossierId={dossier.id}
-          comments={dossier.comments}
-          onAddComment={onAddComment}
-        />
       </div>
-    </motion.div>
+    </motion.article>
   );
-}
-
-function getFlag(code: string): string {
-  const map: Record<string, string> = {
-    "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-    ar: "🇦🇷",
-    fr: "🇫🇷",
-    kr: "🇰🇷",
-    de: "🇩🇪",
-    za: "🇿🇦",
-    br: "🇧🇷",
-    qa: "🇶🇦",
-    us: "🇺🇸",
-    uy: "🇺🇾",
-  };
-  return map[code] || "🏳️";
 }

@@ -1,9 +1,85 @@
+import { additionalDossiers } from "./additional-dossiers";
+import { getAnthem, type Anthem } from "./media";
+
+/**
+ * A citation backing a claim in a dossier.
+ *
+ * Every record in this archive concerns FIFA as an institution — decisions it
+ * took, warnings it ignored, money it moved, reports it buried. All of it is
+ * built from indictments, court judgments, official reports and admissions.
+ * Nothing is invented. Where a matter is contested, the record says so and
+ * cites the denial.
+ */
+export interface Source {
+  title: string;
+  publisher: string;
+  url: string;
+  year?: number;
+}
+
+/**
+ * Evidentiary status of a record.
+ *  - DOCUMENTED  proven in court, admitted, or established by official report
+ *  - DISPUTED    credible allegations, denied or unproven
+ *  - UNRESOLVED  open questions where the evidence genuinely runs out
+ */
+export type Classification = "DOCUMENTED" | "DISPUTED" | "UNRESOLVED";
+
+/**
+ * What kind of proof underpins a record. This is the axis a reader actually
+ * cares about — a conviction and a denied allegation are not the same claim,
+ * even when both are serious.
+ */
+export type EvidenceKind = "COURT" | "OFFICIAL" | "PRESS" | "ALLEGED" | "OPEN";
+
+export const EVIDENCE_ORDER: EvidenceKind[] = [
+  "COURT",
+  "OFFICIAL",
+  "PRESS",
+  "ALLEGED",
+  "OPEN",
+];
+
+export const EVIDENCE_LABEL: Record<EvidenceKind, string> = {
+  COURT: "Convictions & admissions",
+  OFFICIAL: "Official reports",
+  PRESS: "Investigative reporting",
+  ALLEGED: "Denied or unproven",
+  OPEN: "No finding yet",
+};
+
+/** One-line description of what each tier actually means. */
+export const EVIDENCE_NOTE: Record<EvidenceKind, string> = {
+  COURT: "Established by court judgment, guilty plea, or explicit admission.",
+  OFFICIAL: "Rests on an official report, published document or uncontested record.",
+  PRESS: "Built from investigative journalism working from documents.",
+  ALLEGED: "A credible allegation that is denied, unproven, or contested.",
+  OPEN: "Forward-looking or unsettled; no finding has been established.",
+};
+
 export interface SecretDossier {
   id: string;
   year: number;
   title: string;
+  /** One-line hook shown on the card face. */
+  summary?: string;
   description: string;
-  classification: "TOP SECRET" | "CONFIDENTIAL" | "CLASSIFIED";
+  /** Free-form topic tags used by search and the filter bar. */
+  tags?: string[];
+  /** 1-5 strength of the documentary record behind the claim. */
+  credibility?: number;
+  /** The kind of proof behind the record. Drives the evidence filter. */
+  evidence?: EvidenceKind;
+  /**
+   * People and organisations named in the record. Used to connect records to
+   * each other — several figures recur across decades.
+   */
+  people?: string[];
+  classification: Classification;
+  /** Citations. Rendered in full inside the dossier modal. */
+  sources?: Source[];
+  /** The institutional failure in one line — what FIFA actually did wrong. */
+  failure?: string;
   mediaType: "youtube" | "image" | "gallery";
   mediaUrl: string;
   thumbnailUrl: string;
@@ -12,11 +88,7 @@ export interface SecretDossier {
   comments: Comment[];
   hostNation: string;
   hostFlag: string;
-  anthem: {
-    title: string;
-    artist: string;
-    youtubeId: string;
-  };
+  anthem: Anthem | null;
 }
 
 export interface Comment {
@@ -26,234 +98,384 @@ export interface Comment {
   timestamp: string;
 }
 
-export const secretDossiers: SecretDossier[] = [
+export type SourceDossier = Omit<SecretDossier, "anthem">;
+
+const IMG = (id: string) => `https://images.unsplash.com/${id}?w=1200&q=80`;
+
+export const secretDossiers: SourceDossier[] = [
   {
-    id: "SEC-1966-001",
-    year: 1966,
-    title: "The Wembley Phantom Goal",
-    description: "Declassified analysis reveals that Geoff Hurst's iconic World Cup Final goal never actually crossed the goal line. High-resolution photogrammetry from 1966 shows the ball striking the crossbar and bouncing down—on the line, not over it. The Soviet linesman Bakhramov's split-second decision remains one of football's greatest mysteries. Enhanced footage from six angles confirms the ball's trajectory, yet FIFA's official archives have classified all but two frames of the original broadcast negative. The question persists: was it a goal, or was it the most consequential optical illusion in sporting history?",
-    classification: "TOP SECRET",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/NQqhZxCJm8A",
-    thumbnailUrl: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
+    id: "SEC-2015-001",
+    year: 2015,
+    title: "The Morning FIFA Was Raided",
+    summary:
+      "Swiss police walked into the Baur au Lac at dawn and arrested seven FIFA officials. The indictment ran to 47 counts.",
+    failure:
+      "FIFA was described by US prosecutors as a racketeering enterprise operating across two generations of leadership.",
+    tags: ["indictment", "racketeering", "doj", "arrests"],
+    credibility: 5,
+    evidence: "COURT",
+    people: ["FIFA", "US Department of Justice", "Sepp Blatter", "Jeffrey Webb", "Jack Warner", "Loretta Lynch"],
+    classification: "DOCUMENTED",
+    description:
+      "On 27 May 2015, during FIFA's annual congress, Swiss police entered the Baur au Lac hotel in Zurich and arrested seven senior officials on behalf of the US Department of Justice. The indictment ran to 47 counts across 164 pages and named fourteen people — nine FIFA officials and five sports marketing executives — alleging bribes and kickbacks exceeding $150 million over more than two decades. Attorney General Loretta Lynch said the defendants had corrupted the business of worldwide football 'to serve their interests and to enrich themselves'. The DOJ's framing was the significant part: it charged the conduct under the Racketeer Influenced and Corrupt Organizations Act, the statute written for organised crime, and described FIFA as an enterprise in which 'two generations of soccer officials' had abused their positions. A second wave followed on 3 December 2015, when two more FIFA vice-presidents were arrested at the same hotel and sixteen further indictments were unsealed. More than forty officials and entities have since been charged or pleaded guilty. Sepp Blatter, re-elected president four days after the first raid, announced his resignation on 2 June.",
+    sources: [
+      {
+        title: "Nine FIFA Officials and Five Corporate Executives Indicted for Racketeering Conspiracy and Corruption",
+        publisher: "US Department of Justice",
+        url: "https://web.archive.org/web/20160417221705/https:/www.justice.gov/opa/pr/nine-fifa-officials-and-five-corporate-executives-indicted-racketeering-conspiracy-and",
+        year: 2015,
+      },
+      {
+        title: "2015 FIFA corruption case",
+        publisher: "Wikipedia",
+        url: "https://en.wikipedia.org/wiki/2015_FIFA_corruption_case",
+      },
     ],
-    upvotes: 1284,
-    comments: [
-      { id: "c1", author: "DossierHunter", text: "The debate will never be settled. I've seen the enhanced footage—it's millimeters either way.", timestamp: "2026-03-12T14:23:00Z" },
-      { id: "c2", author: "WembleyWhisper", text: "Bakhramov was a KGB plant. The fix was in.", timestamp: "2026-04-01T09:15:00Z" },
-    ],
-    hostNation: "England",
-    hostFlag: "gb-eng",
-    anthem: { title: "World Cup Willie", artist: "The England Squad", youtubeId: "NQqhZxCJm8A" },
-  },
-  {
-    id: "SEC-1978-002",
-    year: 1978,
-    title: "Operation Argentina: The Dirty War Final",
-    description: "Internal FIFA memos reveal the Argentine military junta pressured referees and match officials during the 1978 World Cup. Peru's shocking 6-0 loss to Argentina in the second round—a result that eliminated Brazil—was allegedly orchestrated by the Videla regime in exchange for political favors and financial guarantees totaling over $50 million in today's currency. Whistleblower accounts from within the Argentine Football Association detail covert meetings where match outcomes were discussed as matters of national security, not sport.",
-    classification: "TOP SECRET",
     mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
-      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
-    ],
-    upvotes: 967,
+    mediaUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    thumbnailUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    gallery: [],
+    upvotes: 4210,
     comments: [
-      { id: "c3", author: "HistoryBuff_78", text: "This is well-documented outside FIFA archives too. The junta used the World Cup as propaganda.", timestamp: "2026-02-28T16:45:00Z" },
+      {
+        id: "c-2015-1",
+        author: "BrooklynDocket",
+        text: "RICO. The statute built for the mafia, applied to the governing body of football. That's the whole story in one acronym.",
+        timestamp: "2026-05-27T09:12:00Z",
+      },
     ],
-    hostNation: "Argentina",
-    hostFlag: "ar",
-    anthem: { title: "El Mundial", artist: "Los Caracoles", youtubeId: "r3H7a8xUwE0" },
+    hostNation: "Switzerland",
+    hostFlag: "ch",
   },
   {
-    id: "SEC-1998-003",
-    year: 1998,
-    title: "The Pre-Final Injection Protocol",
-    description: "Confidential medical logs suggest Ronaldo Nazário suffered a convulsive seizure hours before the 1998 World Cup Final. FIFA's medical team administered an undisclosed sedative cocktail that left the Brazilian star lethargic and disoriented during the match against France. The official line was an 'ankle injury'—but internal documents from the Brazilian camp tell a different story. Teammates have since come forward describing a hotel room emergency at 4 PM, a rushed medical assessment by tournament doctors rather than Brazil's own staff, and Ronaldo's pale, glazed expression in the tunnel before kickoff.",
-    classification: "CLASSIFIED",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/QsQNjSnV6TY",
-    thumbnailUrl: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-      "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80",
+    id: "SEC-2013-002",
+    year: 2013,
+    title: "FIFA's Own Executive Wore a Wire",
+    summary:
+      "Chuck Blazer pleaded guilty to ten felonies and admitted taking bribes over two World Cup bids. He had been informing since 2011.",
+    failure:
+      "A sitting member of FIFA's executive committee took bribes on World Cup host selection for over a decade without detection.",
+    tags: ["blazer", "informant", "bribery", "concacaf"],
+    credibility: 5,
+    evidence: "COURT",
+    people: ["FIFA", "Chuck Blazer", "CONCACAF", "US Department of Justice"],
+    classification: "DOCUMENTED",
+    description:
+      "Chuck Blazer sat on FIFA's executive committee from 1997 to 2013 and ran CONCACAF as general secretary for two decades. In a sealed Brooklyn courtroom in November 2013 he pleaded guilty to ten felonies including racketeering conspiracy, wire fraud, money laundering and six counts of tax evasion. The transcript, unsealed in June 2015, contains his admissions in his own words: that he agreed in 1992 to facilitate a bribe in connection with the selection of the 1998 World Cup host, and that he and others on the FIFA executive committee agreed to accept bribes in connection with South Africa's selection for 2010. He also admitted taking kickbacks on broadcast rights for five CONCACAF Gold Cup tournaments between 1996 and 2003, and failing to declare roughly $11 million in income. After US authorities confronted him over the unpaid tax, Blazer cooperated — reportedly wearing a concealed microphone to record other football officials at the 2012 London Olympics. The point for FIFA is not that Blazer was corrupt. It is that he sat at the top of the organisation for sixteen years while doing it, and it took the IRS rather than FIFA to find out.",
+    sources: [
+      {
+        title: "Chuck Blazer: FIFA execs took bribes ahead of '98, '10 World Cups",
+        publisher: "CNN",
+        url: "https://www.cnn.com/2015/06/03/us/fifa-chuck-blazer-transcript",
+        year: 2015,
+      },
+      {
+        title: "Chuck Blazer worked undercover for U.S. informing on FIFA",
+        publisher: "ESPN",
+        url: "https://en.wikipedia.org/wiki/Chuck_Blazer",
+      },
     ],
-    upvotes: 2103,
-    comments: [
-      { id: "c4", author: "RonaldoTruth", text: "He was never the same after that night. The conspiracy runs deep.", timestamp: "2026-01-15T11:30:00Z" },
-      { id: "c5", author: "ParisSaint", text: "France was unstoppable anyway. But we deserved to see the real R9.", timestamp: "2026-05-20T20:10:00Z" },
-    ],
-    hostNation: "France",
-    hostFlag: "fr",
-    anthem: { title: "La Copa de la Vida", artist: "Ricky Martin", youtubeId: "dOQY6W-A_bA" },
-  },
-  {
-    id: "SEC-2002-007",
-    year: 2002,
-    title: "The South Korea Shadow Refs",
-    description: "Operational files detail systematic referee bias during the 2002 Round of 16 and quarterfinal matches involving South Korea. Italian and Spanish teams were eliminated following controversial decisions by officials Ecuador's Byron Moreno and Egypt's Gamal Al-Ghandour. Intercepted communications suggest diplomatic pressure from high-ranking FIFA officials to ensure the co-host's deep run. Moreno's now-infamous disqualification of Francesco Totti for diving, and the disallowed golden goal against Spain, remain textbook cases of match manipulation. Both referees were quietly retired from international duty within months.",
-    classification: "TOP SECRET",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/oCw1T1Y6F4M",
-    thumbnailUrl: "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-      "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
-    ],
-    upvotes: 1756,
-    comments: [
-      { id: "c6", author: "AzzurriFaithful", text: "Byron Moreno should have been banned for life. We were robbed.", timestamp: "2026-02-10T08:00:00Z" },
-    ],
-    hostNation: "South Korea",
-    hostFlag: "kr",
-    anthem: { title: "Let's Get Together", artist: "Lena Park", youtubeId: "bYW2y7GMEVg" },
-  },
-  {
-    id: "SEC-2006-004",
-    year: 2006,
-    title: "Zidane's Headbutt: The Provocation Transcript",
-    description: "Lip-reading analysis and rogue audio from the 2006 Final reveal what Materazzi actually said to Zinédine Zidane. The intercepted track translates to a deeply personal insult regarding Zidane's sister. MATRIX records show FIFA initially attempted to scrub all audio evidence from broadcast archives and instructed broadcasters worldwide to destroy raw feeds from the incident. A single copy survived in a German TV station's vault, leaked years later by a whistleblower. The transcript shows Materazzi taunted Zidane for 90 seconds before the French captain finally snapped.",
-    classification: "CONFIDENTIAL",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/0Ykm5R_cMGg",
-    thumbnailUrl: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-      "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-      "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-    ],
-    upvotes: 3210,
-    comments: [
-      { id: "c7", author: "MarseilleMystic", text: "Materazzi knew exactly what to say. Zidane took the bait, but he took a stand too.", timestamp: "2026-04-05T22:00:00Z" },
-    ],
-    hostNation: "Germany",
-    hostFlag: "de",
-    anthem: { title: "Time of Our Lives", artist: "Il Divo & Toni Braxton", youtubeId: "9Ik3YsqhHrM" },
-  },
-  {
-    id: "SEC-2010-005",
-    year: 2010,
-    title: "The Vuvuzela Sonic Weapon Theory",
-    description: "Acoustic analysis of the 2010 World Cup reveals the vuvuzela's 127dB drone caused measurable communication breakdowns on the pitch. UEFA and FIFA internal reports documented that players in South Africa struggled with basic verbal coordination, with several teams filing formal complaints about inadequate acoustic mitigation. Post-tournament studies linked the sustained noise levels to temporary hearing threshold shifts among midfielders and referees. FIFA's own safety guidelines for stadium noise were quietly revised in 2011, though the organization has never publicly acknowledged the 2010 tournament as a catalyst.",
-    classification: "TOP SECRET",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/KPMkLKm7sn0",
-    thumbnailUrl: "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-    ],
-    upvotes: 845,
-    comments: [
-      { id: "c8", author: "JoburgJive", text: "I was there. The noise was unbearable. Couldn't hear my own thoughts.", timestamp: "2026-03-01T13:00:00Z" },
-      { id: "c9", author: "AudioAnalyst", text: "127dB sustained is a weapon. Period. The math doesn't lie.", timestamp: "2026-06-18T07:30:00Z" },
-    ],
-    hostNation: "South Africa",
-    hostFlag: "za",
-    anthem: { title: "Waka Waka", artist: "Shakira", youtubeId: "pRpeEdMmmQ0" },
-  },
-  {
-    id: "SEC-2014-006",
-    year: 2014,
-    title: "Maracanã Halftime: The Leaked Team Talk",
-    description: "An off-grid recording device captured the Germany dressing room at halftime of the 7-1 semifinal against Brazil. The audio reveals then-assistant coach Hansi Flick producing a notepad with detailed second-half tactical adjustments that exploited Brazil's psychological collapse after Neymar's injury. The final 7-1 scoreline was no accident—it was surgical. The recording, hidden in a fire extinguisher casing by a stadium electrician, captures Flick's chillingly precise instructions: overload the right flank where Marcelo was isolated, press Thiago Silva high to force errors, and target Fernandinho's positioning after the 60th minute when his fitness dropped.",
-    classification: "CLASSIFIED",
     mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=800&q=80",
-      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
-      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-    ],
-    upvotes: 2891,
-    comments: [
-      { id: "c10", author: "MineirazoGhost", text: "7-1. I still can't believe it. Germany was cold-blooded.", timestamp: "2026-01-30T19:45:00Z" },
-    ],
-    hostNation: "Brazil",
-    hostFlag: "br",
-    anthem: { title: "We Are One", artist: "Pitbull ft. Jennifer Lopez", youtubeId: "6L6XqW6pJ4I" },
-  },
-  {
-    id: "SEC-2022-008",
-    year: 2022,
-    title: "The VAR Blackout Protocol",
-    description: "Internal FIFA cybersecurity logs show the VAR system suffered a 14-minute 'unexplained outage' during the 2022 World Cup quarterfinal between Portugal and Morocco at a critical decision point. Forensic analysis points to a sophisticated RF jamming attack originating from within the stadium compound. The incident was logged but never publicly disclosed. Three independent cybersecurity firms contracted by FIFA concluded the jammer was military-grade, operating on the 5.8GHz band used by the VAR wireless transmission system. FIFA's official report blamed 'interference from broadcast equipment'—a claim no broadcast engineer on site corroborated.",
-    classification: "TOP SECRET",
-    mediaType: "youtube",
-    mediaUrl: "https://www.youtube.com/embed/hJNfWj8KjUs",
-    thumbnailUrl: "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1511882150382-4210563a7c6b?w=800&q=80",
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1560272564-c83b66b1ad2a?w=800&q=80",
-    ],
-    upvotes: 1534,
-    comments: [
-      { id: "c11", author: "TechTactician", text: "14 minutes is not an outage. That's a deliberate window.", timestamp: "2026-05-12T15:20:00Z" },
-      { id: "c12", author: "LusailLeaks", text: "Morocco's run was magic. But this explains so much.", timestamp: "2026-06-01T10:00:00Z" },
-    ],
-    hostNation: "Qatar",
-    hostFlag: "qa",
-    anthem: { title: "Tukoh Taka", artist: "Nicki Minaj, Maluma & Myriam Fares", youtubeId: "LiCBgXMFC-Q" },
-  },
-  {
-    id: "SEC-2026-009",
-    year: 2026,
-    title: "Halftime: The Concussion Cover-Up",
-    description: "Whistleblower medical staff have leaked a halftime injury report from the 2026 World Cup group stage. A star forward was diagnosed with a grade 2 concussion following a collision in the 38th minute but was cleared to continue playing after a 'spirited discussion' in the tunnel between team doctors and tournament medical officers. FIFA's independent medical panel was not informed until 72 hours later. The player's identity is redacted pending investigation, but match footage shows the athlete stumbling visibly upon rising from the tackle. The leaked report recommends an overhaul of in-game concussion protocols, recommendations FIFA has declined to implement.",
-    classification: "TOP SECRET",
-    mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80",
-      "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&q=80",
-    ],
-    upvotes: 412,
+    mediaUrl: IMG("photo-1459865264687-595d652de67e"),
+    thumbnailUrl: IMG("photo-1459865264687-595d652de67e"),
+    gallery: [],
+    upvotes: 2890,
     comments: [],
     hostNation: "United States",
     hostFlag: "us",
-    anthem: { title: "Dai Dai", artist: "Shakira & Burna Boy", youtubeId: "k72jJfR9Z2I" },
   },
   {
-    id: "SEC-1930-010",
-    year: 1930,
-    title: "The Montevideo Arrangement",
-    description: "Declassified Uruguayan foreign ministry cables reveal that the 1930 World Cup was awarded to Uruguay through a series of backroom deals involving European boycotts. FIFA guaranteed Uruguay the final hosting spot in exchange for underwriting the entire tournament budget and constructing the Centenario Stadium. The trophy engraving was ordered before the first ball was kicked. Cables show FIFA officials privately acknowledged that Uruguay's bid was the only financially viable option after European federations refused to travel across the Atlantic. The tournament's existence was itself a gamble—and the cables suggest FIFA knew Uruguay would win before a single match was played.",
-    classification: "CONFIDENTIAL",
+    id: "SEC-2012-003",
+    year: 2012,
+    title: "The ISL Files FIFA Fought to Keep Sealed",
+    summary:
+      "A FIFA president took kickbacks from the federation's own marketing partner. FIFA spent years in court trying to stop the documents being published.",
+    failure:
+      "FIFA made its cooperation with prosecutors conditional on the case against its own president being dropped.",
+    tags: ["isl", "havelange", "kickbacks", "cover-up"],
+    credibility: 5,
+    evidence: "COURT",
+    people: ["FIFA", "João Havelange", "Ricardo Teixeira", "ISL", "BBC Panorama"],
+    classification: "DOCUMENTED",
+    description:
+      "ISL was FIFA's marketing partner until it collapsed in 2001 with debts of around $300 million. The bankruptcy triggered a Swiss criminal investigation which found the agency had paid close to $200 million in what a judge characterised as bribes to sports officials between 1989 and 2000. In July 2012, after the Swiss Supreme Court threw out an appeal by the men named, FIFA was compelled to publish the prosecutor's dossier. It showed that João Havelange, FIFA president from 1974 to 1998, received 1.5 million Swiss francs in 1997 while still in office, and that executive committee member Ricardo Teixeira received at least 12.74 million. Payments attributed to accounts connected to the two men totalled almost 22 million Swiss francs. Commercial bribery was not a crime in Switzerland at the time, and the criminal probe was closed in 2010 after 5.5 million francs was repaid — on condition the recipients' identities stayed secret. The prosecutor's report noted that FIFA had made its consent to that settlement conditional on proceedings against its former president being dropped, and described FIFA as 'a deficient organisation in its enterprise'. The dossier only became public because the BBC's Panorama team spent a year litigating for it.",
+    sources: [
+      {
+        title: "Joao Havelange, ex-Fifa president, received huge sums in bribes",
+        publisher: "BBC Sport",
+        url: "https://www.bbc.com/sport/football/18804464",
+        year: 2012,
+      },
+      {
+        title: "FIFA names Havelange, Teixeira in kickbacks case",
+        publisher: "Associated Press",
+        url: "https://www.foxsports.com/stories/soccer/fifa-names-havelange-teixeira-in-kickbacks-case",
+        year: 2012,
+      },
+    ],
     mediaType: "gallery",
-    mediaUrl: "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
-    thumbnailUrl: "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
-    gallery: [
-      "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
-      "https://images.unsplash.com/photo-1574629810360-3ef6e6e5f5f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80",
-    ],
-    upvotes: 678,
+    mediaUrl: IMG("photo-1522778119026-d647f0596c20"),
+    thumbnailUrl: IMG("photo-1522778119026-d647f0596c20"),
+    gallery: [],
+    upvotes: 2340,
     comments: [
-      { id: "c13", author: "OldSchoolAnalyst", text: "Some things never change. Football politics is older than the World Cup itself.", timestamp: "2026-07-01T06:30:00Z" },
+      {
+        id: "c-2012-1",
+        author: "ZugArchive",
+        text: "Read that condition again. FIFA would cooperate, provided the case against its own former president went away.",
+        timestamp: "2026-03-19T10:40:00Z",
+      },
     ],
-    hostNation: "Uruguay",
-    hostFlag: "uy",
-    anthem: { title: "La Celeste", artist: "Uruguayan National Band", youtubeId: "XuLx6VYW3Uk" },
+    hostNation: "Switzerland",
+    hostFlag: "ch",
+  },
+  {
+    id: "SEC-2010-004",
+    year: 2010,
+    title: "FIFA Knew Qatar Was Too Hot Before It Voted",
+    summary:
+      "Its own technical report called the summer heat a health risk and rated the bid high risk. It voted for Qatar anyway.",
+    failure:
+      "FIFA's evaluation ranked Qatar the weakest bid, then the executive committee chose it and spent five years reversing the consequences.",
+    tags: ["qatar", "bidding", "heat", "technical-report"],
+    credibility: 5,
+    evidence: "COURT",
+    people: ["FIFA", "Sepp Blatter", "Qatar"],
+    classification: "DOCUMENTED",
+    description:
+      "FIFA published a technical evaluation of the 2018 and 2022 bids in November 2010, before the vote. On Qatar it was explicit: staging the tournament in June and July, 'the two hottest months of the year in this region, has to be considered as a potential health risk for players, spectators, officials and the FIFA family'. The operational risk assessment rated Qatar medium or high risk in eight of nine categories, and the report noted that the proposed stadium cooling technology did not yet exist at the scale required. Qatar received the worst overall ranking of any 2022 candidate. On 2 December 2010 the executive committee awarded it the tournament regardless, beating the United States 14-8 in the final round. Five years later FIFA abandoned the summer schedule and moved the tournament to November and December, disrupting every domestic league calendar in Europe. Blatter's own assessment, given to Swiss television in 2014: 'Of course, it was a mistake. You know, one makes a lot of mistakes in life. The technical report indicated clearly that it was too hot in summer, but despite that the executive committee decided with quite a big majority that the tournament would be in Qatar.'",
+    sources: [
+      {
+        title: "Fifa warns of Qatar 2022 heat risk",
+        publisher: "Al Jazeera",
+        url: "https://www.aljazeera.com/sports/2010/11/17/fifa-warns-of-qatar-2022-heat-risk",
+        year: 2010,
+      },
+      {
+        title: "What happened to the Qatar World Cup's cooling technology?",
+        publisher: "BBC News",
+        url: "https://www.bbc.com/news/magazine-31608062",
+        year: 2015,
+      },
+    ],
+    mediaType: "gallery",
+    mediaUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    thumbnailUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    gallery: [],
+    upvotes: 3560,
+    comments: [
+      {
+        id: "c-2010-1",
+        author: "TechnicalReport",
+        text: "The president said out loud that it was a mistake. Nobody resigned over it, nothing was re-run.",
+        timestamp: "2026-04-30T14:22:00Z",
+      },
+    ],
+    hostNation: "Qatar",
+    hostFlag: "qa",
+  },
+  {
+    id: "SEC-2014-005",
+    year: 2014,
+    title: "FIFA Buried Its Own Corruption Report",
+    summary:
+      "Michael Garcia investigated the 2018 and 2022 bids. FIFA published a 42-page summary he disowned, then sat on the 430-page report for three years.",
+    failure:
+      "FIFA commissioned an independent investigation, suppressed it, mischaracterised it, and released it only after a newspaper leak.",
+    tags: ["garcia-report", "suppression", "bidding", "ethics"],
+    credibility: 4,
+    evidence: "OFFICIAL",
+    people: ["FIFA", "Michael Garcia", "Hans-Joachim Eckert", "Qatar", "Russia"],
+    classification: "DOCUMENTED",
+    description:
+      "FIFA appointed US attorney Michael Garcia to investigate the bidding for the 2018 and 2022 World Cups. He delivered a 430-page report in September 2014. FIFA published only a 42-page summary written by ethics judge Hans-Joachim Eckert, which concluded the problems identified were 'not suited to compromise the integrity' of the process. Garcia publicly disputed that characterisation of his own findings and resigned in protest. The full report stayed sealed until June 2017 — and appeared then only because the German newspaper Bild had begun printing extracts from a leaked copy less than 24 hours earlier. What it contained: three executive committee members flown by private jet, funded by the Qatari Football Association, to a party in Rio before the ballot; the equivalent of €1.8 million deposited into the bank account of an executive committee member's daughter in the months after the bid; and Garcia's finding that 'a number of executive committee members sought to obtain personal favors or benefits'. It found no evidence that Russia's bid team unduly influenced voters, while recording that Russia's leased bid computers had been destroyed and staff email accounts were never recovered. Separately, FIFA's ethics committee questioned whether the technical evaluation itself was compromised, after its chief inspector was found to have asked a Qatari academy for personal favours for family members.",
+    sources: [
+      {
+        title: "FIFA publishes Michael Garcia report on 2018-2022 World Cup bidding",
+        publisher: "Associated Press",
+        url: "https://www.denverpost.com/2017/06/27/fifa-michael-garcia-report-world-cup-bidding/",
+        year: 2017,
+      },
+      {
+        title: "Garcia Report",
+        publisher: "Wikipedia",
+        url: "https://en.wikipedia.org/wiki/Garcia_Report",
+      },
+    ],
+    mediaType: "gallery",
+    mediaUrl: IMG("photo-1459865264687-595d652de67e"),
+    thumbnailUrl: IMG("photo-1459865264687-595d652de67e"),
+    gallery: [],
+    upvotes: 3120,
+    comments: [
+      {
+        id: "c-2014-1",
+        author: "GarciaLeaks",
+        text: "The investigator resigned over how his own report was summarised. Three years later a tabloid had to leak it.",
+        timestamp: "2026-04-07T12:40:00Z",
+      },
+    ],
+    hostNation: "Switzerland",
+    hostFlag: "ch",
+  },
+  {
+    id: "SEC-2015-006",
+    year: 2015,
+    title: "Two Million Francs, No Contract",
+    summary:
+      "FIFA paid its president's likely successor 2m Swiss francs for work done a decade earlier. Nobody could produce a written agreement.",
+    failure:
+      "The two most powerful men in football moved 2m francs of FIFA money with no documentation, months before a presidential election.",
+    tags: ["blatter", "platini", "payment", "ethics-ban"],
+    credibility: 4,
+    evidence: "OFFICIAL",
+    people: ["FIFA", "Sepp Blatter", "Michel Platini", "UEFA"],
+    classification: "DOCUMENTED",
+    description:
+      "In January 2011, Michel Platini — then UEFA president — wrote to FIFA requesting backdated additional salary for advisory work performed between 1998 and 2002. Sepp Blatter authorised a payment of 2 million Swiss francs within weeks, as he prepared to campaign for re-election against Mohamed bin Hammam in a contest where Platini's influence over European voters mattered. No written agreement covering the sum was ever produced. Both men said an oral contract existed. FIFA's ethics committee rejected that explanation as unconvincing and in December 2015 banned both for eight years, later reduced on appeal — Blatter fined 50,000 francs, Platini 80,000. The ban ended Platini's campaign to succeed Blatter as FIFA president. Swiss prosecutors opened a criminal case, charging both men in November 2021 with fraud, mismanagement, misappropriation and forgery. Both were acquitted at trial in Bellinzona in July 2022, and cleared again on appeal in March 2025. The criminal case failed; the ethics finding — that FIFA's own president authorised a payment with no legal basis — was upheld by the Court of Arbitration for Sport and the Swiss Federal Tribunal.",
+    sources: [
+      {
+        title: "Sepp Blatter, Michel Platini vow to appeal 8-year bans from FIFA",
+        publisher: "CBC Sports",
+        url: "https://www.cbc.ca/sports/soccer/blatter-platini-fifa-ban-1.3374214",
+        year: 2015,
+      },
+      {
+        title: "Former football chiefs Sepp Blatter, Michel Platini cleared of corruption",
+        publisher: "The Athletic",
+        url: "https://www.nytimes.com/athletic/6228938/2025/03/25/blatter-platini-trial-corruption-fifa/",
+        year: 2025,
+      },
+    ],
+    mediaType: "gallery",
+    mediaUrl: IMG("photo-1543326727-cf6c39e8f84c"),
+    thumbnailUrl: IMG("photo-1543326727-cf6c39e8f84c"),
+    gallery: [],
+    upvotes: 2670,
+    comments: [
+      {
+        id: "c-2015b-1",
+        author: "BellinzonaWatch",
+        text: "Acquitted criminally, banned ethically. Both things are true and people pick whichever suits them.",
+        timestamp: "2026-03-26T08:15:00Z",
+      },
+    ],
+    hostNation: "Switzerland",
+    hostFlag: "ch",
+  },
+  {
+    id: "SEC-2021-007",
+    year: 2021,
+    title: "Nobody Agrees How Many Workers Died",
+    summary:
+      "Qatar counted 37 at stadium sites. The Guardian counted 6,500 across the country. The tournament chief said 400 to 500.",
+    failure:
+      "FIFA awarded a tournament to a state with a documented forced-labour system and put no worker-safety conditions in the hosting agreement.",
+    tags: ["labour", "qatar", "human-rights", "kafala"],
+    credibility: 3,
+    evidence: "PRESS",
+    people: ["FIFA", "Qatar", "Hassan Al-Thawadi", "The Guardian", "ILO"],
+    classification: "DISPUTED",
+    description:
+      "In February 2021 The Guardian published an investigation using death records from the embassies and governments of India, Bangladesh, Nepal, Sri Lanka and Pakistan, counting at least 6,500 migrant worker deaths in Qatar between 2011 and 2020. The paper was explicit that not all could be attributed to World Cup construction. Qatar did not dispute the raw figure but called the framing misleading, noting it covers all foreign worker deaths from all causes over a decade and that only around 20% of migrant workers are in construction. Officially, Qatar recorded 37 deaths among labourers at World Cup stadium sites between 2014 and 2020, three classified as work-related. The International Labour Organization considers that an undercount: Qatar does not classify deaths from cardiac arrest or respiratory failure as work-related, though both are common presentations of heatstroke. The ILO recorded 50 foreign worker deaths and over 500 serious injuries in 2021 alone. In November 2022, tournament chief executive Hassan Al-Thawadi told TalkTV the figure for World Cup-connected projects was 'around 400, between 400 and 500' — far above any number Qatari officials had previously given. FIFA's own position is the institutional failure: it awarded the tournament in 2010, when the kafala sponsorship system was already documented by human rights organisations, and attached no binding labour conditions to the hosting agreement.",
+    sources: [
+      {
+        title: "Revealed: 6,500 migrant workers have died in Qatar since World Cup awarded",
+        publisher: "The Guardian",
+        url: "https://www.theguardian.com/global-development/2022/nov/19/qatar-working-conditions-world-cup-guardian-reporting",
+        year: 2021,
+      },
+      {
+        title: "Qatar World Cup chief says between 400 and 500 migrant workers died",
+        publisher: "CNN",
+        url: "https://www.cnn.com/2022/11/29/football/qatar-world-cup-migrant-worker-deaths-spt-intl/index.html",
+        year: 2022,
+      },
+      {
+        title: "World Cup 2022: How has Qatar treated foreign workers?",
+        publisher: "BBC News",
+        url: "https://www.bbc.com/news/world-60867042",
+        year: 2022,
+      },
+    ],
+    mediaType: "gallery",
+    mediaUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    thumbnailUrl: IMG("photo-1526232761682-d26e03ac148e"),
+    gallery: [],
+    upvotes: 3410,
+    comments: [
+      {
+        id: "c5",
+        author: "LabourWatch",
+        text: "The gap between 37 and 6,500 is the whole story. Both numbers are real; they count different things, and nobody will reconcile them.",
+        timestamp: "2026-06-11T15:05:00Z",
+      },
+    ],
+    hostNation: "Qatar",
+    hostFlag: "qa",
+  },
+  {
+    id: "SEC-1921-008",
+    year: 1921,
+    title: "Football Banned Women for Fifty Years",
+    summary:
+      "53,000 watched a women's match at Goodison Park. Within a year the FA barred women from every affiliated ground.",
+    failure:
+      "The governing structure of football destroyed the women's game at its commercial peak and did not reverse the decision for half a century.",
+    tags: ["womens-football", "ban", "the-fa", "institutional"],
+    credibility: 5,
+    evidence: "COURT",
+    people: ["The Football Association", "Dick, Kerr Ladies", "Lily Parr"],
+    classification: "DOCUMENTED",
+    description:
+      "On Boxing Day 1920, more than 53,000 people packed Goodison Park to watch Dick, Kerr Ladies play St Helens in a charity match, with thousands more locked outside. It was a record for a women's match that stood for over ninety years. Women's football had grown enormously during the First World War through factory teams, and by 1921 around 150 clubs existed, some drawing crowds of 45,000. On 5 December 1921 the Football Association barred women's matches from all affiliated grounds and instructed its referees not to officiate, declaring the game 'quite unsuitable for females and ought not to be encouraged'. It did not claim the power to stop women playing — it simply removed the stadiums, the officials and the legitimacy in a single decision. The stated concern was the handling of charitable receipts; the practical effect was to end mass-audience women's football. The ban ran until 1971. Thirty teams met in Liverpool days after the ruling to form the English Ladies' Football Association, and the game survived in parks and on borrowed pitches, but the audience never returned at that scale. The FA issued a form of apology in 2008, eighty-seven years later. FIFA did not stage a Women's World Cup until 1991 — sixty-one years after the men's tournament began.",
+    sources: [
+      {
+        title: "Women's football: FA apologises for 1921 ban",
+        publisher: "The Guardian",
+        url: "https://www.theguardian.com/football/2008/feb/11/newsstory.womensfootball",
+        year: 2008,
+      },
+      {
+        title: "Kicking Down Barriers — the story of women's football in England",
+        publisher: "The Football Association",
+        url: "https://www.thefa.com/womens-girls-football/heritage/kicking-down-barriers",
+      },
+    ],
+    mediaType: "gallery",
+    mediaUrl: IMG("photo-1431324155629-1a6deb1dec8d"),
+    thumbnailUrl: IMG("photo-1431324155629-1a6deb1dec8d"),
+    gallery: [],
+    upvotes: 2980,
+    comments: [
+      {
+        id: "c-1921-1",
+        author: "GoodisonArchive",
+        text: "53,000 in 1920. The record stood for ninety years because the game was deliberately dismantled.",
+        timestamp: "2026-02-08T09:30:00Z",
+      },
+    ],
+    hostNation: "England",
+    hostFlag: "gb-eng",
   },
 ];
 
-export const worldCupAnthems: Record<number, { title: string; artist: string; youtubeId: string }> = {};
-secretDossiers.forEach((d) => {
-  worldCupAnthems[d.year] = d.anthem;
+/**
+ * Full archive: institutional records plus the tournament-level cases, ordered
+ * by year so the grid and timeline read chronologically.
+ */
+export const allDossiers: SecretDossier[] = [...secretDossiers, ...additionalDossiers]
+  .map((d) => {
+    // Anthems come only from the verified media registry. Any year without a
+    // confirmed, embeddable official song gets null and the UI hides playback.
+    const verified = getAnthem(d.year);
+    return { ...d, anthem: verified };
+  })
+  .sort((a, b) => a.year - b.year);
+
+export const worldCupAnthems: Record<number, Anthem> = {};
+allDossiers.forEach((d) => {
+  if (d.anthem) worldCupAnthems[d.year] = d.anthem;
 });
 
 export const worldCupYears = [

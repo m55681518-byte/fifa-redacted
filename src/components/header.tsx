@@ -1,50 +1,110 @@
 "use client";
 
-import { useState } from "react";
-import { Shield, Plus, FileText } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useSpring } from "framer-motion";
+import { Plus, Search, Shield } from "lucide-react";
 import { SubmissionModal } from "./submission-modal";
 
-export function Header({ archiveCount }: { archiveCount: number }) {
+interface HeaderProps {
+  archiveCount: number;
+  onOpenSearch: () => void;
+}
+
+export function Header({ archiveCount, onOpenSearch }: HeaderProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Reading-progress bar driven by scroll position.
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 140, damping: 26, restDelta: 0.001 });
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /**
+   * Publish the header's measured height as --header-h so the sticky filter
+   * bar can offset itself exactly. This previously used a hardcoded 57px,
+   * which stopped matching when the nav controls were resized and left the
+   * filter bar tucked 5px underneath the header.
+   */
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const publish = () =>
+      document.documentElement.style.setProperty(
+        "--header-h",
+        `${Math.round(el.getBoundingClientRect().height)}px`
+      );
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    window.addEventListener("resize", publish);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", publish);
+    };
+  }, []);
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-none border border-[#ff2e2e]/40 bg-[#ff2e2e]/10">
-              <Shield className="h-5 w-5 text-[#ff2e2e]" />
-            </div>
-            <div>
-              <h1 className="font-display text-base font-bold tracking-[0.15em] text-zinc-100">
-                REDACTED<span className="text-[#ff2e2e]">DOSSIERS</span>
-              </h1>
-              <p className="font-mono-custom text-[8px] tracking-[0.25em] text-zinc-500">
-                [ FIFA SECRET ARCHIVES ]
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-none border border-zinc-800 bg-zinc-900/80 px-3 py-1.5 font-mono-custom text-[10px]">
-              <FileText className="h-3 w-3 text-zinc-500" />
-              <span className="text-zinc-400">
-                ARCHIVE:{" "}
-                <span className="font-bold text-[#ff2e2e]">
-                  {archiveCount}
-                </span>
+      <header
+        ref={headerRef}
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
+          scrolled
+            ? "border-line bg-void/88 backdrop-blur-xl"
+            : "border-transparent bg-transparent"
+        }`}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <a href="#" className="flex items-center gap-2.5" aria-label="FIFA Redacted home">
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center border border-line-strong bg-surface-2">
+              <Shield className="h-4 w-4 text-redline/80" />
+            </span>
+            <span className="hidden sm:block">
+              <span className="font-display block text-xs leading-tight tracking-[0.14em] text-ink-max">
+                FIFA<span className="text-redline">REDACTED</span>
               </span>
-            </div>
+              <span className="font-mono-custom block text-[8px] tracking-[0.26em] text-ink-low">
+                {archiveCount} RECORDS
+              </span>
+            </span>
+          </a>
 
+          <div className="flex items-center gap-3">
+            {/* Primary action: searching the archive */}
+            <button
+              onClick={onOpenSearch}
+              aria-label="Search the archive"
+              className="group flex items-center gap-2.5 border border-line-strong bg-surface-1 px-3.5 py-2 text-ink-mid transition-colors hover:border-ink-low hover:text-ink-max"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="font-mono-custom hidden text-[10px] tracking-wider md:inline">
+                SEARCH ARCHIVE
+              </span>
+              <kbd className="hidden md:inline">⌘K</kbd>
+            </button>
+
+            {/* Secondary action: quiet outline, not a solid red block */}
             <button
               onClick={() => setModalOpen(true)}
-              className="flex items-center gap-2 rounded-none border border-[#ff2e2e]/30 bg-[#ff2e2e]/10 px-4 py-2 font-display text-xs font-bold text-[#ff2e2e] tracking-wider transition-all hover:bg-[#ff2e2e]/20 active:scale-95"
+              className="font-display flex items-center gap-2 border border-line-strong px-3.5 py-2 text-[11px] text-ink-mid transition-colors hover:border-redline/60 hover:text-redline"
             >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">SUBMIT SECRET</span>
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">SUBMIT</span>
             </button>
           </div>
         </div>
+
+        {/* Scroll progress */}
+        <motion.div
+          style={{ scaleX: progress, originX: 0 }}
+          className="h-px bg-gradient-to-r from-redline via-amber to-redline"
+        />
       </header>
 
       <SubmissionModal open={modalOpen} onOpenChange={setModalOpen} />
