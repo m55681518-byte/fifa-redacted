@@ -2,7 +2,8 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, Command, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ClonerField } from "./cloner-field";
 
 interface HeroProps {
   totalRecords: number;
@@ -33,8 +34,49 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
     document.getElementById("archive")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // Pointer parallax for the title lockup. Same rAF + CSS-variable approach as
+  // the cloner field: the transform is driven by custom properties so React
+  // never re-renders while the pointer moves.
+  const tiltRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reduce) return;
+    const el = tiltRef.current;
+    if (!el) return;
+    if (window.matchMedia("(hover: none)").matches) return;
+
+    let frame = 0;
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+
+    const onMove = (e: PointerEvent) => {
+      tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    const tick = () => {
+      cx += (tx - cx) * 0.06;
+      cy += (ty - cy) * 0.06;
+      el.style.setProperty("--px", cx.toFixed(4));
+      el.style.setProperty("--py", cy.toFixed(4));
+      if (Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        frame = 0;
+      }
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [reduce]);
+
   return (
     <section className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-4 pt-20 pb-16">
+      {/* 3D cloner array of redacted document planes, floating in perspective
+          space behind the content. */}
+      <ClonerField />
+
       {/* Ambient field */}
       <div className="pointer-events-none absolute inset-0 grid-bg" />
       <div
@@ -46,13 +88,14 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
         style={{ background: "radial-gradient(circle, rgba(245,165,36,0.10), transparent 70%)" }}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl text-center">
+      <div ref={tiltRef} className="hero-3d relative z-10 mx-auto w-full max-w-6xl text-center">
+        <div className="hero-3d-inner">
         {/* Eyebrow */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-7 flex justify-center"
+          className="depth-2 mb-7 flex justify-center"
         >
           <div className="glass-panel flex items-center gap-2.5 rounded-full px-4 py-1.5">
             <span className="live-dot" />
@@ -71,7 +114,7 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.85, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="hero-title"
+          className="hero-title depth-3"
         >
           <span className="block text-ink-max">FIFA</span>
           <span className="relative block">
@@ -95,7 +138,7 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-6 flex h-6 items-center justify-center gap-3"
+          className="depth-2 mt-6 flex h-6 items-center justify-center gap-3"
         >
           <span className="h-px w-8 bg-gradient-to-r from-transparent to-line-strong" />
           <motion.span
@@ -125,7 +168,7 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.74 }}
-          className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          className="depth-1 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <button
             onClick={scrollToArchive}
@@ -166,6 +209,7 @@ export function Hero({ totalRecords, documentedCount, yearSpan, onOpenSearch }: 
             </div>
           ))}
         </motion.dl>
+        </div>
       </div>
 
       {/* Scroll cue */}

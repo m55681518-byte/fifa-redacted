@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
 import { Bookmark, FileText, MessageSquare, Play, ThumbsUp } from "lucide-react";
@@ -40,6 +41,24 @@ export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardP
   const exhibit = getExhibit(dossier.id);
   const poster = image?.src ?? dossier.thumbnailUrl;
 
+  // Card tilt. The pointer position is written to CSS variables on the element
+  // itself, so the transform happens on the compositor and React never
+  // re-renders while the pointer moves across a grid of 20 cards.
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    const el = tiltRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--cx", (((e.clientX - r.left) / r.width - 0.5) * 2).toFixed(3));
+    el.style.setProperty("--cy", (((e.clientY - r.top) / r.height - 0.5) * 2).toFixed(3));
+  }, []);
+  const onPointerLeave = useCallback(() => {
+    const el = tiltRef.current;
+    if (!el) return;
+    el.style.setProperty("--cx", "0");
+    el.style.setProperty("--cy", "0");
+  }, []);
+
   return (
     <motion.article
       layout
@@ -47,8 +66,12 @@ export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardP
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3), ease: [0.16, 1, 0.3, 1] }}
-      className="dossier-card group flex flex-col"
+      className="card-3d group"
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
     >
+    <div ref={tiltRef} className="card-3d-inner dossier-card flex h-full flex-col">
+      <span className="card-3d-sheen" aria-hidden />
       <span className="crosshair crosshair-tl" aria-hidden />
       <span className="crosshair crosshair-tr" aria-hidden />
       <span className="crosshair crosshair-bl" aria-hidden />
@@ -235,6 +258,7 @@ export function SecretCard({ dossier, index, onOpen, onPlayAnthem }: SecretCardP
           )}
         </div>
       </div>
+    </div>
     </motion.article>
   );
 }
